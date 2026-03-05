@@ -22,7 +22,7 @@ KasBot adalah bot WhatsApp berbasis AI yang membantu pelaku UMKM Indonesia menca
 | Layer | Teknologi |
 |---|---|
 | WhatsApp Interface | Node.js + Baileys |
-| AI Extraction | Google Gemini 2.0 Flash Lite |
+| AI Extraction | Google Gemini 2.5 Flash Lite |
 | OCR Struk | Google Cloud Vision API |
 | Speech to Text | OpenAI Whisper |
 | Database | Supabase (PostgreSQL) |
@@ -68,7 +68,7 @@ src/
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/username/kas-bot-be.git
+git clone https://github.com/adhidevara/kas-bot-be.git
 cd kas-bot-be
 npm install
 ```
