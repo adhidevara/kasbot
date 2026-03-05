@@ -22,10 +22,11 @@ KasBot adalah bot WhatsApp berbasis AI yang membantu pelaku UMKM Indonesia menca
 | Layer | Teknologi |
 |---|---|
 | WhatsApp Interface | Node.js + Baileys |
-| AI Extraction | Google Gemini 2.5 Flash Lite |
+| AI Extraction | Google Gemini *(configurable via env)* |
 | OCR Struk | Google Cloud Vision API |
 | Speech to Text | OpenAI Whisper |
 | Database | Supabase (PostgreSQL) |
+| Process Manager | PM2 |
 | Runtime | Node.js v22+ |
 
 ---
@@ -33,33 +34,39 @@ KasBot adalah bot WhatsApp berbasis AI yang membantu pelaku UMKM Indonesia menca
 ## 📁 Struktur Proyek
 
 ```
-src/
-├── config/
-│   └── supabase.js           # Koneksi Supabase terpusat
-├── modules/
-│   ├── ai-engine/
-│   │   ├── ai.listener.js    # Orchestrator utama (onboarding, tier, AI)
-│   │   └── ai.service.js     # Integrasi Gemini AI
-│   ├── anomaly/
-│   │   └── anomaly.service.js # Deteksi anomali transaksi (Z-score)
-│   ├── cfo-virtual/
-│   │   └── cfo.listener.js   # Format & kirim laporan ke user
-│   ├── finance/
-│   │   └── finance.listener.js # Simpan transaksi ke Supabase
-│   ├── media/
-│   │   ├── media.listener.js # Handler OCR & STT
-│   │   ├── ocr.service.js    # Google Vision API
-│   │   └── stt.service.js    # OpenAI Whisper
-│   ├── onboarding/
-│   │   └── onboarding.service.js # Alur onboarding 4 langkah via WA
-│   ├── tier/
-│   │   └── tier.service.js   # Manajemen plan & batas akses
-│   └── whatsapp/
-│       └── whatsapp.service.js # Koneksi & listener WhatsApp
-└── shared/
-    ├── errorHandler.js       # Global error handler
-    ├── eventBus.js           # Event bus antar modul
-    └── logger.js             # Logger dengan level kontrol
+kas-bot-be/
+├── src/
+│   ├── config/
+│   │   └── supabase.js             # Koneksi Supabase terpusat
+│   ├── modules/
+│   │   ├── ai-engine/
+│   │   │   ├── ai.listener.js      # Orchestrator utama (onboarding, tier, AI)
+│   │   │   └── ai.service.js       # Integrasi Gemini AI
+│   │   ├── anomaly/
+│   │   │   └── anomaly.service.js  # Deteksi anomali transaksi (Z-score)
+│   │   ├── cfo-virtual/
+│   │   │   └── cfo.listener.js     # Format & kirim laporan ke user
+│   │   ├── finance/
+│   │   │   └── finance.listener.js # Simpan transaksi ke Supabase
+│   │   ├── media/
+│   │   │   ├── media.listener.js   # Handler OCR & STT
+│   │   │   ├── ocr.service.js      # Google Vision API
+│   │   │   └── stt.service.js      # OpenAI Whisper
+│   │   ├── onboarding/
+│   │   │   └── onboarding.service.js # Alur onboarding 4 langkah via WA
+│   │   ├── tier/
+│   │   │   └── tier.service.js     # Manajemen plan & batas akses
+│   │   └── whatsapp/
+│   │       └── whatsapp.service.js # Koneksi & listener WhatsApp
+│   └── shared/
+│       ├── errorHandler.js         # Global error handler
+│       ├── eventBus.js             # Event bus antar modul
+│       └── logger.js               # Logger dengan level kontrol
+├── logs/                           # PM2 log output (auto-generated)
+├── ecosystem.config.cjs            # Konfigurasi PM2
+├── migration_final.sql             # Schema database Supabase
+├── .env.example                    # Template environment variables
+└── server.js                       # Entry point
 ```
 
 ---
@@ -71,6 +78,7 @@ src/
 git clone https://github.com/adhidevara/kas-bot-be.git
 cd kas-bot-be
 npm install
+npm install -g pm2
 ```
 
 ### 2. Konfigurasi Environment
@@ -86,18 +94,49 @@ GEMINI_API_KEY=
 GOOGLE_VISION_API_KEY=
 OPENAI_API_KEY=
 ADMIN_WA=628xxxxxxxxxx@s.whatsapp.net
+
+# Model Gemini: gemini-2.0-flash-lite-001 | gemini-2.0-flash | gemini-2.5-flash-lite
+GEMINI_MODEL=gemini-2.5-flash-lite
+
+# Level log: silent | error | warn | info | verbose
 LOG_LEVEL=info
 ```
 
 ### 3. Setup Database
-Jalankan `migration_final.sql` di Supabase SQL Editor.
+Jalankan `migration_final.sql` di **Supabase → SQL Editor**.
 
 ### 4. Jalankan
+
+**Development:**
 ```bash
-npm start
+npm run dev
 ```
 
-Scan QR yang muncul di terminal dengan WhatsApp > Perangkat Tertaut.
+**Production (dengan PM2):**
+```bash
+npm run prod
+```
+
+Scan QR yang muncul di terminal dengan **WhatsApp → Perangkat Tertaut**.
+
+---
+
+## 🖥️ PM2 Commands
+
+```bash
+npm run prod      # Jalankan production (LOG_LEVEL=warn, auto-restart)
+npm run dev       # Jalankan development (LOG_LEVEL=verbose)
+npm run stop      # Hentikan bot
+npm run restart   # Restart bot
+npm run logs      # Lihat log realtime
+npm run status    # Cek status bot
+```
+
+**Auto-start saat server reboot:**
+```bash
+pm2 startup
+pm2 save
+```
 
 ---
 
@@ -125,7 +164,7 @@ Anomaly detection (plan Basic/Pro)
 
 | Plan | Harga | Transaksi/Bulan | Anomali Detection |
 |---|---|---|---|
-| Trial | Gratis | 30 | ❌ |
+| Trial | Gratis 14 hari | 30 | ❌ |
 | Basic | Rp 149.000/bulan | 300 | ✅ |
 | Pro | Rp 289.000/bulan | Unlimited | ✅ |
 
@@ -151,13 +190,7 @@ Bot:  🔍 Sedang membaca struk Anda...
       🏷️ Potongan:
         - Diskon Member: -Rp2.000
 ```
-
 ---
-
-> Dokumen konfidensial — hanya untuk kalangan internal tim pendiri.
-
----
-
 ## 📄 Lisensi
 
 Lisensi **Business Source License 1.1 (BSL)**:
@@ -167,3 +200,6 @@ Lisensi **Business Source License 1.1 (BSL)**:
 - 🔓 Otomatis menjadi **MIT License** pada **1 Januari 2028**
 
 Untuk lisensi komersial, hubungi pemilik proyek.
+---
+> Dokumen konfidensial — hanya untuk kalangan internal tim pendiri.
+---
