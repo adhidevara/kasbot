@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment variables (JANGAN PERNAH di-commit)
+.env
+
+# WhatsApp session (regenerate dengan scan QR ulang)
+auth_info_baileys/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Test & utility files (tidak dibutuhkan di production)
+tests/
+test-event.js
+check-models.js
