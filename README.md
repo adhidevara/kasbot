@@ -127,7 +127,7 @@ Anomaly detection (plan Basic/Pro)
 |---|---|---|---|
 | Trial | Gratis | 30 | ❌ |
 | Basic | Rp 149.000/bulan | 300 | ✅ |
-| Pro | Rp 149.000/bulan | Unlimited | ✅ |
+| Pro | Rp 289.000/bulan | Unlimited | ✅ |
 
 ---
 
