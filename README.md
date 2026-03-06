@@ -26,6 +26,7 @@ KasBot adalah bot WhatsApp berbasis AI yang membantu pelaku UMKM Indonesia menca
 | OCR Struk | Google Cloud Vision API |
 | Speech to Text | OpenAI Whisper |
 | Database | Supabase (PostgreSQL) |
+| Queue System | BullMQ + Redis |
 | Process Manager | PM2 |
 | Runtime | Node.js v22+ |
 
@@ -34,7 +35,7 @@ KasBot adalah bot WhatsApp berbasis AI yang membantu pelaku UMKM Indonesia menca
 ## 📁 Struktur Proyek
 
 ```
-kas-bot-be/
+kasbot/
 ├── src/
 │   ├── config/
 │   │   └── supabase.js             # Koneksi Supabase terpusat
@@ -61,7 +62,9 @@ kas-bot-be/
 │   └── shared/
 │       ├── errorHandler.js         # Global error handler
 │       ├── eventBus.js             # Event bus antar modul
-│       └── logger.js               # Logger dengan level kontrol
+│       ├── logger.js               # Logger dengan level kontrol
+│       ├── queue.js                # BullMQ queue definitions
+│       └── queue.worker.js         # BullMQ workers (text + media)
 ├── logs/                           # PM2 log output (auto-generated)
 ├── ecosystem.config.cjs            # Konfigurasi PM2
 ├── migration_final.sql             # Schema database Supabase
@@ -75,8 +78,8 @@ kas-bot-be/
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/adhidevara/kas-bot-be.git
-cd kas-bot-be
+git clone https://github.com/adhidevara/kasbot.git
+cd kasbot
 npm install
 npm install -g pm2
 ```
@@ -98,14 +101,25 @@ ADMIN_WA=628xxxxxxxxxx@s.whatsapp.net
 # Model Gemini: gemini-2.0-flash-lite-001 | gemini-2.0-flash | gemini-2.5-flash-lite
 GEMINI_MODEL=gemini-2.5-flash-lite
 
+# Redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
 # Level log: silent | error | warn | info | verbose
 LOG_LEVEL=info
 ```
 
-### 3. Setup Database
+### 3. Jalankan Redis
+```bash
+# Menggunakan Docker
+docker run -d -p 6379:6379 redis:alpine
+```
+
+### 4. Setup Database
 Jalankan `migration_final.sql` di **Supabase → SQL Editor**.
 
-### 4. Jalankan
+### 5. Jalankan
 
 **Development:**
 ```bash
@@ -145,7 +159,11 @@ pm2 save
 ```
 Pesan WA masuk (teks / foto / voice note)
     ↓
-Cek onboarding & tier user
+Masuk ke BullMQ Queue (messageQueue / mediaQueue)
+    ↓
+Worker memproses antrian (maks 5 concurrent teks, 3 media)
+    ↓
+Cek onboarding & tier user (state di Supabase)
     ↓
 Media processing (OCR / STT jika perlu)
     ↓
@@ -157,6 +175,17 @@ CFO Virtual kirim laporan ke user
     ↓
 Anomaly detection (plan Basic/Pro)
 ```
+
+---
+
+## 🔧 Skalabilitas
+
+| Skala | Status | Implementasi |
+|---|---|---|
+| 1–20 user | ✅ Done | PM2 auto-restart, LOG_LEVEL=warn |
+| 20–50 user | ✅ Done | BullMQ + Redis queue, onboardingState ke Supabase |
+| 50–100 user | 🔜 Planned | WA Business API, Redis cache, connection pooling |
+| 100+ user | 🔜 Planned | Multi-instance, load balancer, migrate dari Baileys |
 
 ---
 
@@ -190,7 +219,13 @@ Bot:  🔍 Sedang membaca struk Anda...
       🏷️ Potongan:
         - Diskon Member: -Rp2.000
 ```
+
 ---
+
+> Dokumen konfidensial — hanya untuk kalangan internal tim pendiri.
+
+---
+
 ## 📄 Lisensi
 
 Lisensi **Business Source License 1.1 (BSL)**:
@@ -200,6 +235,3 @@ Lisensi **Business Source License 1.1 (BSL)**:
 - 🔓 Otomatis menjadi **MIT License** pada **1 Januari 2028**
 
 Untuk lisensi komersial, hubungi pemilik proyek.
----
-> Dokumen konfidensial — hanya untuk kalangan internal tim pendiri.
----
