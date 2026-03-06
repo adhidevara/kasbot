@@ -16,12 +16,19 @@ export async function processInput(text, context) {
       Konteks: ${context.kategori}
 
       Perhatian umum:
-      - Teks mungkin berisi LEBIH DARI SATU transaksi dalam baris berbeda
+      - Teks mungkin berisi LEBIH DARI SATU transaksi dalam satu teks
       - "beli" / "bayar" / "keluar" = pengeluaran
       - "jual" / "terima" / "masuk" = pemasukan
       - Jika caption/catatan pengirim menyebut "jual" → tipe = pemasukan, meski isi struk adalah struk belanja
       - Jika ada campuran, ikuti konteks caption jika ada, jika tidak pilih tipe PALING DOMINAN
       - total = nilai TOTAL AKHIR yang benar-benar dibayar (sudah memperhitungkan semua potongan dan tambahan)
+
+      Toleransi teks:
+      - Teks mungkin berasal dari transkripsi voice note, sehingga bisa mengandung
+        typo, kata terpisah, atau ejaan tidak sempurna (contoh: "seha arga" = "seharga",
+        "du aratus" = "dua ratus"). Tebak maksud yang paling logis.
+      - Konversi satuan nilai: "juta" = × 1.000.000, "ribu" = × 1.000, "miliar" = × 1.000.000.000
+        Contoh: "200 juta" → 200000000, "1,5 juta" → 1500000, "500 ribu" → 500000
 
       Untuk field "harga" per item:
       - Gunakan harga SATUAN ASLI sebelum potongan apapun
@@ -38,23 +45,37 @@ export async function processInput(text, context) {
       - Jika struk kasir → tebak paling logis (minuman → "pcs", sabun → "botol", dll)
       - JANGAN isi null → gunakan "pcs" jika tidak bisa ditebak
 
-      Hasilkan JSON:
-      {
-        "total": number,
-        "tipe": "pemasukan" | "pengeluaran",
-        "items": [
-          {"nama": string, "satuan": string, "qty": number, "harga": number}
-        ],
-        "penyesuaian": [
-          {"nama": string, "nilai": number, "tipe": "potongan" | "tambahan"}
-        ]
-      }
+      PENTING: Selalu kembalikan dalam bentuk JSON array, meskipun hanya ada satu transaksi.
+      Hasilkan JSON array:
+      [
+        {
+          "total": number,
+          "tipe": "pemasukan" | "pengeluaran",
+          "items": [
+            {"nama": string, "satuan": string, "qty": number, "harga": number}
+          ],
+          "penyesuaian": [
+            {"nama": string, "nilai": number, "tipe": "potongan" | "tambahan"}
+          ]
+        }
+      ]
     `;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return JSON.parse(response.text());
-    
+    const parsed = JSON.parse(response.text());
+
+    // ✅ Normalisasi: selalu return array, apapun bentuk response Gemini
+    const normalized = Array.isArray(parsed) ? parsed : [parsed];
+
+    // ✅ Filter hasil yang tidak valid
+    const valid = normalized.filter(r => r && (r.total !== undefined && r.total !== null));
+
+    if (valid.length === 0) return null;
+
+    logger.info(`✅ Gemini ekstrak ${valid.length} transaksi dari input.`);
+    return valid;
+
   } catch (error) {
     logger.error("🔍 Detail Error Gemini:", error);
     throw new Error(`Gemini API Failure: ${error.message}`);

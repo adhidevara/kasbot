@@ -10,8 +10,15 @@ const VISION_API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${p
  * @returns {string} - Teks hasil OCR
  */
 export async function extractTextFromImage(imageBuffer) {
-    const base64Image = imageBuffer.toString('base64');
+    // ✅ Deserialisasi Buffer dari BullMQ (sama seperti audio)
+    const buf = Buffer.isBuffer(imageBuffer)
+        ? imageBuffer
+        : Buffer.from(imageBuffer.data);
 
+    // ✅ Konversi Buffer ke Base64 untuk dikirim ke Vision API
+    const base64Image = buf.toString('base64');
+
+    // ✅ Siapkan request body untuk Vision API
     const requestBody = {
         requests: [{
             image: { content: base64Image },
@@ -22,17 +29,20 @@ export async function extractTextFromImage(imageBuffer) {
         }]
     };
 
+    // ✅ Panggil Google Vision API
     const response = await fetch(VISION_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
     });
 
+    // ✅ Tangani error dari API
     if (!response.ok) {
         const err = await response.text();
         throw new Error(`Vision API Error: ${response.status} - ${err}`);
     }
 
+    // ✅ Ekstrak teks dari response API
     const data = await response.json();
     const annotation = data.responses?.[0];
 

@@ -8,19 +8,20 @@ import makeWASocket, {
 import qrcode from 'qrcode-terminal';
 import bus from '../../shared/eventBus.js';
 import pino from 'pino';
+import { messageQueue, mediaQueue } from '../../shared/queue.js';
 
 let sockInstance = null;
 
 bus.on('whatsapp.send_message', async ({ to, text }) => {
     if (!sockInstance) {
-        logger.error("❌ Gagal kirim: socket belum siap.");
+        logger.error("Gagal kirim: socket belum siap.");
         return;
     }
     try {
         logger.info(`📤 Mengirim balasan ke ${to}...`);
         await sockInstance.sendMessage(to, { text });
     } catch (err) {
-        logger.error("❌ Gagal mengirim pesan WhatsApp:", err.message);
+        logger.error("Gagal mengirim pesan WhatsApp:", err.message);
     }
 });
 
@@ -54,7 +55,7 @@ export async function startWA() {
                 sockInstance = null;
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
                 const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-                logger.warn(`❌ Terputus: ${statusCode}. Reconnect: ${shouldReconnect}`);
+                logger.warn(`Terputus: ${statusCode}. Reconnect: ${shouldReconnect}`);
                 if (shouldReconnect) setTimeout(() => startWA(), 5000);
             } else if (connection === 'open') {
                 logger.info('✅ KASBOT TERHUBUNG KE WHATSAPP');
@@ -67,7 +68,7 @@ export async function startWA() {
             if (!msg.message || msg.message.protocolMessage) return;
             if (msg.key.fromMe) return;
 
-            logger.info('📩 Event masuk:', JSON.stringify(msg.key, null, 2));
+            logger.verbose('📩 Event masuk: ' + JSON.stringify(msg.key));
 
             const sender = msg.key.remoteJid;
             const senderAlt = msg.key.remoteJidAlt || null;
@@ -76,34 +77,30 @@ export async function startWA() {
             if (sender.endsWith('@g.us')) return;
 
             const type = Object.keys(msg.message)[0];
-            logger.info('📋 Tipe pesan:', type);
+            logger.verbose(`📋 Tipe pesan: ${type}`);
 
-            // ─────────────────────────────────────
-            // TIPE 1: Pesan teks biasa
-            // ─────────────────────────────────────
+            // ─── TIPE 1: Teks ─────────────────────────────
             if (type === 'conversation' || type === 'extendedTextMessage') {
                 const text = msg.message.conversation
                     || msg.message.extendedTextMessage?.text
                     || '';
-
                 if (!text) return;
 
                 logger.verbose(`🔍 Teks: [${sender}] -> ${text}`);
-                bus.emit('whatsapp.message_received', {
-                    sender, senderAlt, text,
-                    source_type: 'teks'
+
+                // ✅ Masukkan ke queue, bukan langsung proses
+                await messageQueue.add('text-message', {
+                    type: 'text',
+                    payload: { sender, senderAlt, text, source_type: 'teks' }
                 });
                 return;
             }
 
-            // ─────────────────────────────────────
-            // TIPE 2: Gambar / Foto Struk (OCR)
-            // ─────────────────────────────────────
+            // ─── TIPE 2: Gambar ───────────────────────────
             if (type === 'imageMessage') {
                 const caption = msg.message.imageMessage?.caption || '';
-                logger.verbose(`🖼️ Gambar diterima dari [${sender}]${caption ? `, caption: ${caption}` : ''}`);
+                logger.verbose(`🖼️ Gambar dari [${sender}]`);
 
-                // Kirim notif processing dulu agar user tidak menunggu tanpa info
                 bus.emit('whatsapp.send_message', {
                     to: sender,
                     text: '🔍 Sedang membaca struk Anda...'
@@ -115,14 +112,13 @@ export async function startWA() {
                         reuploadRequest: sock.updateMediaMessage
                     });
 
-                    bus.emit('whatsapp.image_received', {
-                        sender, senderAlt,
-                        imageBuffer: buffer,
-                        caption,
-                        source_type: 'foto'
+                    // ✅ Masukkan ke media queue
+                    await mediaQueue.add('image-message', {
+                        type: 'image',
+                        payload: { sender, senderAlt, imageBuffer: buffer, caption, source_type: 'foto' }
                     });
                 } catch (err) {
-                    logger.error('❌ Gagal download gambar:', err.message);
+                    logger.error('Gagal download gambar:', err.message);
                     bus.emit('whatsapp.send_message', {
                         to: sender,
                         text: '❌ Gagal membaca gambar. Coba kirim ulang foto struk Anda.'
@@ -131,18 +127,12 @@ export async function startWA() {
                 return;
             }
 
-            // ─────────────────────────────────────
-            // TIPE 3: Voice Note (STT)
-            // ─────────────────────────────────────
+            // ─── TIPE 3: Voice Note ───────────────────────
             if (type === 'audioMessage') {
-                const isPtt = msg.message.audioMessage?.ptt; // ptt = push to talk = voice note
-                if (!isPtt) {
-                    // Audio file biasa (musik dll), abaikan
-                    logger.info('⚠️ Audio bukan voice note, diabaikan.');
-                    return;
-                }
+                const isPtt = msg.message.audioMessage?.ptt;
+                if (!isPtt) return;
 
-                logger.verbose(`🎙️ Voice note diterima dari [${sender}]`);
+                logger.verbose(`🎙️ Voice note dari [${sender}]`);
 
                 bus.emit('whatsapp.send_message', {
                     to: sender,
@@ -155,13 +145,13 @@ export async function startWA() {
                         reuploadRequest: sock.updateMediaMessage
                     });
 
-                    bus.emit('whatsapp.audio_received', {
-                        sender, senderAlt,
-                        audioBuffer: buffer,
-                        source_type: 'suara'
+                    // ✅ Masukkan ke media queue
+                    await mediaQueue.add('audio-message', {
+                        type: 'audio',
+                        payload: { sender, senderAlt, audioBuffer: buffer, source_type: 'suara' }
                     });
                 } catch (err) {
-                    logger.error('❌ Gagal download audio:', err.message);
+                    logger.error('Gagal download audio:', err.message);
                     bus.emit('whatsapp.send_message', {
                         to: sender,
                         text: '❌ Gagal memproses voice note. Coba kirim ulang.'
@@ -170,10 +160,10 @@ export async function startWA() {
                 return;
             }
 
-            logger.info(`⚠️ Tipe pesan tidak didukung: ${type}`);
+            logger.verbose(`⚠️ Tipe pesan tidak didukung: ${type}`);
         });
 
     } catch (err) {
-        logger.error('❌ Error di startWA:', err);
+        logger.error('Error di startWA:', err);
     }
 }

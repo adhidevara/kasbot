@@ -79,3 +79,16 @@ CREATE INDEX IF NOT EXISTS idx_penyesuaian_transaksi
 -- ============================================================
 -- SELESAI
 -- ============================================================
+
+-- ============================================================
+-- TAMBAHAN: Tabel onboarding_state (persistent, bukan in-memory)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS onboarding_state (
+    nomor_wa    TEXT PRIMARY KEY,
+    state       JSONB NOT NULL,
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Auto-hapus state yang lebih dari 1 hari (expired/abandoned)
+CREATE INDEX IF NOT EXISTS idx_onboarding_updated
+    ON onboarding_state (updated_at);

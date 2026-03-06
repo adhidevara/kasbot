@@ -2,6 +2,7 @@
 import logger from '../../shared/logger.js';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
+import { Readable } from 'stream';
 
 /**
  * Transkripsi audio voice note WhatsApp menggunakan OpenAI Whisper
@@ -9,12 +10,22 @@ import FormData from 'form-data';
  * @returns {string} - Teks hasil transkripsi
  */
 export async function transcribeAudio(audioBuffer) {
+    // Siapkan form data untuk request ke Whisper API
     const formData = new FormData();
 
+    // Deserialisasi Buffer yang di-serialize oleh BullMQ
+    const buf = Buffer.isBuffer(audioBuffer)
+        ? audioBuffer
+        : Buffer.from(audioBuffer.data);  // audioBuffer.data adalah array of bytes
+
+    // Debug: Pastikan buf sudah benar
+    const stream = Readable.from([buf]);
+
     // WhatsApp kirim audio sebagai .ogg — Whisper support langsung
-    formData.append('file', audioBuffer, {
+    formData.append('file', stream, {
         filename: 'audio.ogg',
         contentType: 'audio/ogg',
+        knownLength: buf.length
     });
     formData.append('model', 'whisper-1');
     formData.append('language', 'id'); // Bahasa Indonesia

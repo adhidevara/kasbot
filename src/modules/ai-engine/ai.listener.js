@@ -98,22 +98,24 @@ bus.on('whatsapp.message_received', async (payload) => {
         }
     }
 
-    if (!aiResult || (!aiResult.total && aiResult.total !== 0)) {
+    if (!aiResult || aiResult.length === 0) {
         logger.warn(`⚠️ AI tidak menemukan data transaksi: "${text}"`);
         return;
     }
 
-    logger.info("✨ AI Berhasil Ekstraksi:", JSON.stringify(aiResult, null, 2));
+    logger.info(`✨ AI Berhasil Ekstraksi ${aiResult.length} transaksi:`, JSON.stringify(aiResult, null, 2));
 
-    bus.emit('ai.processing_finished', {
-        ...payload,
-        ...aiResult,
-        text,
-        user_id: userProfile.id,         // UUID dari tabel pengguna
-        pengguna_id_alt: nomorWa,         // Nomor WA untuk referensi silang
-        remoteJidAlt: senderAlt,
-        source_type: 'whatsapp',
-        kategori_bisnis: userProfile.kategori_bisnis,
-        plan: accessCheck.plan
-    });
+    for (const transaksi of aiResult) {
+        bus.emit('ai.processing_finished', {
+            ...payload,
+            ...transaksi,
+            text,
+            user_id: userProfile.id,
+            pengguna_id_alt: nomorWa,
+            remoteJidAlt: senderAlt,
+            source_type: 'whatsapp',
+            kategori_bisnis: userProfile.kategori_bisnis,
+            plan: accessCheck.plan
+        });
+    }
 });

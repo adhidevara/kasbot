@@ -7,22 +7,20 @@ import { startWA } from './src/modules/whatsapp/whatsapp.service.js';
 import './src/modules/ai-engine/ai.listener.js';
 import './src/modules/finance/finance.listener.js';
 import './src/modules/cfo-virtual/cfo.listener.js';
-import './src/modules/media/media.listener.js'; // ✅ OCR + STT listener
+import './src/modules/media/media.listener.js';
+import './src/shared/errorHandler.js';
+import './src/shared/queue.worker.js'; // ✅ Queue workers
 
-const fastify = Fastify({
-    logger: false,
-    disableRequestLogging: true
-});
+const fastify = Fastify({ logger: false, disableRequestLogging: true });
 
 const start = async () => {
     try {
         await fastify.listen({ port: 3000, host: '0.0.0.0' });
         logger.info('🚀 Server Aktif di http://localhost:3000');
-
         logger.info('--- Mencoba Koneksi WhatsApp ---');
         await startWA();
     } catch (err) {
-        logger.error('❌ Gagal Start:', err);
+        logger.error('Gagal Start:', err);
         process.exit(1);
     }
 };
