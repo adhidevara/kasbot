@@ -2,6 +2,7 @@
 import { supabase } from '../../config/supabase.js';
 import logger from '../../shared/logger.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { cacheGet, cacheSet, cacheDel } from '../../shared/redis.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -15,7 +16,9 @@ const KATEGORI_BISNIS = {
     '7': 'Lainnya'
 };
 
-// ─── UTILITIES: DB STATE ─────────────────────────────────────────────────────
+const USER_CACHE_TTL = 5 * 60; // 5 menit
+
+// ─── Supabase-backed onboarding state ────────────────────────────────────────
 
 async function getState(nomorWa) {
     const { data } = await supabase
@@ -38,7 +41,7 @@ async function deleteState(nomorWa) {
     await supabase.from('onboarding_state').delete().eq('nomor_wa', nomorWa);
 }
 
-// ─── AI ASSISTANT ────────────────────────────────────────────────────────────
+// ─── Gemini: Saran kategori bisnis ───────────────────────────────────────────
 
 async function saranKategoriBisnis(namaBisnis) {
     try {
@@ -52,26 +55,53 @@ async function saranKategoriBisnis(namaBisnis) {
             Pilih SATU dari kategori ini yang paling cocok:
             Warung/Toko Kelontong, Kuliner/F&B, Peternakan, Pertanian, Jasa, Retail Fashion,
             Bengkel/Otomotif, Kesehatan/Apotek, Pendidikan/Les, Properti/Kontrakan, Teknologi/Digital, Lainnya.
-            JSON: { "kategori": string, "alasan": string }
+            Jika tidak ada yang cocok, berikan nama kategori baru yang relevan (maks 3 kata).
+            Kembalikan JSON: { "kategori": string, "alasan": string }
         `;
 
         const result = await model.generateContent(prompt);
         return JSON.parse(result.response.text());
     } catch (err) {
-        logger.error('AI Error (saranKategoriBisnis):', err.message);
+        logger.error('Gagal saran kategori:', err.message);
         return null;
     }
 }
 
-// ─── PUBLIC API ───────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export async function isUserRegistered(nomorWa) {
+    const cacheKey = `user:${nomorWa}`;
+
+    // Cek cache dulu
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+        logger.verbose(`⚡ Cache hit: user ${nomorWa}`);
+        return cached;
+    }
+
+    // Cache miss → query Supabase
     const { data } = await supabase
         .from('pengguna')
-        .select('id, onboarding_selesai')
+        .select('*') // ambil semua sekalian untuk tier check
         .eq('nomor_wa', nomorWa)
         .single();
-    return data?.onboarding_selesai ? data : null;
+
+    if (data) {
+        await cacheSet(cacheKey, data, USER_CACHE_TTL);
+        logger.verbose(`💾 Cache set: user ${nomorWa}`);
+    }
+
+    return data || null;
+}
+
+export async function getUserProfile(nomorWa) {
+    // Reuse isUserRegistered — sudah ada cache
+    return isUserRegistered(nomorWa);
+}
+
+export async function invalidateUserCache(nomorWa) {
+    await cacheDel(`user:${nomorWa}`);
+    logger.verbose(`🗑️ Cache invalidated: user ${nomorWa}`);
 }
 
 export async function isInOnboarding(nomorWa) {
@@ -79,95 +109,138 @@ export async function isInOnboarding(nomorWa) {
     return state !== null;
 }
 
-/**
- * Memulai onboarding - WAJIB dipanggil jika user belum terdaftar & belum ada state
- */
 export async function startOnboarding(nomorWa) {
     await setState(nomorWa, { step: 1 });
     return (
         `👋 *Halo! Selamat datang di KasBot!*\n\n` +
-        `Saya asisten keuangan AI Anda. Saya akan membantu Anda mencatat transaksi dan memberi insight terkait usaha anda dengan lebih mudah.\n\n` +
+        `Saya asisten keuangan AI Anda yang akan membantu mencatat transaksi dan memberi insight bisnis.\n\n` +
         `Boleh saya tahu *nama bisnis* Anda?`
     );
 }
 
-/**
- * Alur Logika Utama Onboarding
- */
 export async function processOnboarding(nomorWa, text) {
-    let state = await getState(nomorWa);
-    
-    // Jika state kosong tapi masuk ke sini, paksa balik ke step 1
-    if (!state) {
-        return { reply: await startOnboarding(nomorWa), done: false };
+    let state = await getState(nomorWa) || { step: 1 };
+
+    // ── Step 1: Nama bisnis ──────────────────────────────────────────────────
+    if (state.step === 1) {
+        const namaBisnis = text.trim();
+        await setState(nomorWa, { step: 2, nama_bisnis: namaBisnis });
+        return {
+            reply:
+                `✅ *${namaBisnis}* dicatat!\n\n` +
+                `Bisnis Anda masuk kategori apa? (ketik angka)\n\n` +
+                `1. Warung/Toko Kelontong\n2. Kuliner/F&B\n3. Peternakan\n` +
+                `4. Pertanian\n5. Jasa\n6. Retail Fashion\n7. Lainnya`,
+            done: false
+        };
     }
 
-    const input = text.trim();
+    // ── Step 2: Pilih kategori ───────────────────────────────────────────────
+    if (state.step === 2) {
+        const pilihan = text.trim();
+        const kategori = KATEGORI_BISNIS[pilihan];
 
-    switch (state.step) {
-        case 1: // Simpan Nama Bisnis
-            await setState(nomorWa, { step: 2, nama_bisnis: input });
+        if (!kategori) {
+            return { reply: `⚠️ Pilihan tidak valid. Ketik angka 1-7.`, done: false };
+        }
+
+        if (pilihan === '7') {
+            await setState(nomorWa, { ...state, step: '2b' });
             return {
-                reply: `✅ *${input}* dicatat!\n\n` +
-                       `Bisnis Anda masuk kategori apa? (Ketik angkanya)\n\n` +
-                       `1. Warung/Kelontong\n2. Kuliner/F&B\n3. Peternakan\n4. Pertanian\n5. Jasa\n6. Retail Fashion\n7. Lainnya`,
+                reply:
+                    `Silakan ketik kategori bisnis Anda:\n` +
+                    `_(contoh: Bengkel Motor, Laundry, Apotek, Toko Bangunan)_`,
                 done: false
             };
+        }
 
-        case 2: // Pilih Kategori
-            const kategori = KATEGORI_BISNIS[input];
-            if (!kategori) return { reply: `⚠️ Pilih angka 1-7 yang tersedia.`, done: false };
-
-            if (input === '7') {
-                await setState(nomorWa, { ...state, step: '2b' });
-                return { reply: `Silakan ketik kategori bisnis Anda:\n_(Contoh: Laundry, Bengkel, Apotek)_`, done: false };
-            }
-
-            await setState(nomorWa, { ...state, step: 3, kategori_bisnis: kategori });
-            return { reply: `✅ Kategori *${kategori}*.\n\nApa 3 produk/bahan utama Anda?\n_(Contoh: beras, sabun, telur)_`, done: false };
-
-        case '2b': // Analisis AI untuk input manual
-            const saran = await saranKategoriBisnis(`${state.nama_bisnis} - ${input}`);
-            if (saran && saran.kategori.toLowerCase() !== input.toLowerCase()) {
-                await setState(nomorWa, { ...state, step: '2c', kategori_user: input, saran_kategori: saran.kategori });
-                return {
-                    reply: `🤖 Kami menyarankan kategori:\n📂 *${saran.kategori}*\n_${saran.alasan}_\n\nKetik:\n*1* — Gunakan saran AI\n*2* — Tetap "${input}"`,
-                    done: false
-                };
-            }
-            await setState(nomorWa, { ...state, step: 3, kategori_bisnis: input });
-            return { reply: `✅ Kategori *${input}* dicatat.\n\nApa 3 produk/bahan utama Anda?\n_(Pisah dengan koma)_`, done: false };
-
-        case '2c': // Konfirmasi saran AI
-            const finalCat = input === '1' ? state.saran_kategori : state.kategori_user;
-            await setState(nomorWa, { ...state, step: 3, kategori_bisnis: finalCat });
-            return { reply: `✅ Kategori *${finalCat}* dicatat.\n\nApa 3 produk/bahan utama Anda?\n_(Pisah dengan koma)_`, done: false };
-
-        case 3: // Finalisasi Data
-            const bahan = input.split(',').map(b => b.trim()).filter(Boolean).slice(0, 3);
-            
-            const { error } = await supabase.from('pengguna').upsert({
-                nomor_wa: nomorWa,
-                nama_bisnis: state.nama_bisnis,
-                kategori_bisnis: state.kategori_bisnis,
-                bahan_baku: bahan,
-                onboarding_selesai: true,
-                trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-            });
-
-            if (error) {
-                logger.error('DB Upsert Error:', error.message);
-                return { reply: `❌ Maaf, ada gangguan teknis. Coba kirim ulang bahan baku Anda.`, done: false };
-            }
-
-            await deleteState(nomorWa);
-            return {
-                reply: `🎉 *Profil bisnis anda sudah Selesai kami kenali!*\n\n🏪 *Bisnis:* ${state.nama_bisnis}\n📂 *Kategori:* ${state.kategori_bisnis}\n📦 *3 Bahan utama:* ${bahan.join(', ')}\n⌛*Status*: Trial 14 hari (Gratis)\n\nSilakan mulai mencatat transaksi pertama Anda!\n_Contoh: "jual kopi 5 cup @75000"_`,
-                done: true
-            };
-
-        default:
-            await deleteState(nomorWa);
-            return { reply: `⚠️ Sesi error. Silakan kirim pesan apa saja untuk memulai kembali.`, done: false };
+        await setState(nomorWa, { ...state, step: 3, kategori_bisnis: kategori });
+        return {
+            reply:
+                `✅ Kategori *${kategori}* dipilih.\n\n` +
+                `Apa 3 bahan baku atau produk utama bisnis Anda?\n` +
+                `_(pisah dengan koma, contoh: terigu, gula, telur)_`,
+            done: false
+        };
     }
+
+    // ── Step 2b: Input kategori manual → AI analisa ──────────────────────────
+    if (state.step === '2b') {
+        const inputKategori = text.trim();
+        const saran = await saranKategoriBisnis(`${state.nama_bisnis} - kategori: ${inputKategori}`);
+
+        if (saran && saran.kategori.toLowerCase() !== inputKategori.toLowerCase()) {
+            await setState(nomorWa, { ...state, step: '2c', kategori_user: inputKategori, saran_kategori: saran.kategori });
+            return {
+                reply:
+                    `🤖 Saya menganalisa kategori *"${inputKategori}"* untuk bisnis *"${state.nama_bisnis}"*.\n\n` +
+                    `Saran kategori yang lebih tepat:\n` +
+                    `📂 *${saran.kategori}*\n_${saran.alasan}_\n\n` +
+                    `Ketik:\n*1* — Pakai saran AI (${saran.kategori})\n*2* — Tetap pakai "${inputKategori}"`,
+                done: false
+            };
+        }
+
+        const kategoriFinal = saran?.kategori || inputKategori;
+        await setState(nomorWa, { ...state, step: 3, kategori_bisnis: kategoriFinal });
+        return {
+            reply:
+                `✅ Kategori *${kategoriFinal}* dicatat.\n\n` +
+                `Apa 3 bahan baku atau produk utama bisnis Anda?\n` +
+                `_(pisah dengan koma, contoh: terigu, gula, telur)_`,
+            done: false
+        };
+    }
+
+    // ── Step 2c: Konfirmasi saran AI ─────────────────────────────────────────
+    if (state.step === '2c') {
+        const kategoriFinal = text.trim() === '1' ? state.saran_kategori : state.kategori_user;
+        await setState(nomorWa, { ...state, step: 3, kategori_bisnis: kategoriFinal });
+        return {
+            reply:
+                `✅ Kategori *${kategoriFinal}* dicatat.\n\n` +
+                `Apa 3 bahan baku atau produk utama bisnis Anda?\n` +
+                `_(pisah dengan koma, contoh: terigu, gula, telur)_`,
+            done: false
+        };
+    }
+
+    // ── Step 3: Bahan baku → Simpan ke Supabase ──────────────────────────────
+    if (state.step === 3) {
+        const bahanArray = text.trim().split(',').map(b => b.trim()).filter(Boolean).slice(0, 3);
+
+        const { error } = await supabase.from('pengguna').upsert({
+            nomor_wa: nomorWa,
+            nama_bisnis: state.nama_bisnis,
+            kategori_bisnis: state.kategori_bisnis,
+            bahan_baku: bahanArray,
+            onboarding_selesai: true,
+            plan: 'trial',
+            trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'nomor_wa' });
+
+        if (error) {
+            logger.error('Gagal simpan onboarding:', error.message);
+            return { reply: '❌ Terjadi kesalahan. Coba kirim ulang bahan baku Anda.', done: false };
+        }
+
+        await deleteState(nomorWa);
+        await invalidateUserCache(nomorWa); // Cache lama tidak valid lagi
+
+        return {
+            reply:
+                `🎉 *Profil bisnis Anda sudah siap!*\n\n` +
+                `🏪 *Bisnis:* ${state.nama_bisnis}\n` +
+                `📂 *Kategori:* ${state.kategori_bisnis}\n` +
+                `📦 *Bahan utama dipantau:* ${bahanArray.join(', ')}\n\n` +
+                `⏳ *Status:* Trial 14 hari (GRATIS)\n\n` +
+                `Mulai catat transaksi pertama Anda sekarang!\n` +
+                `_Contoh: "jual ayam 10 ekor @50000" atau "beli pakan 50 kg @15000"_`,
+            done: true
+        };
+    }
+
+    await deleteState(nomorWa);
+    return { reply: '⚠️ Terjadi kesalahan onboarding. Kirim pesan apa saja untuk mulai ulang.', done: false };
 }

@@ -1,9 +1,8 @@
 // src/modules/tier/tier.service.js
 import { supabase } from '../../config/supabase.js';
 import logger from '../../shared/logger.js';
+import { isUserRegistered } from '../onboarding/onboarding.service.js';
 
-
-// Batas per plan
 const PLAN_LIMITS = {
     trial: {
         label: 'Trial 14 Hari',
@@ -25,23 +24,14 @@ const PLAN_LIMITS = {
     }
 };
 
-/**
- * Cek status akses user
- * Return: { allowed: boolean, plan: string, reason: string | null }
- */
 export async function checkAccess(nomorWa) {
-    const { data: user } = await supabase
-        .from('pengguna')
-        .select('plan, trial_ends_at, nomor_wa')
-        .eq('nomor_wa', nomorWa)
-        .single();
-
+    // ✅ Reuse cache dari isUserRegistered — tidak query ulang
+    const user = await isUserRegistered(nomorWa);
     if (!user) return { allowed: false, plan: null, reason: 'not_registered' };
 
     const plan = user.plan || 'trial';
     const now = new Date();
 
-    // Cek trial expired
     if (plan === 'trial') {
         const trialEnd = new Date(user.trial_ends_at);
         if (now > trialEnd) {
@@ -57,26 +47,13 @@ export async function checkAccess(nomorWa) {
             };
         }
 
-        // Hitung sisa hari trial
         const sisaHari = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
-        return {
-            allowed: true,
-            plan: 'trial',
-            sisaHari,
-            limits: PLAN_LIMITS.trial
-        };
+        return { allowed: true, plan: 'trial', sisaHari, limits: PLAN_LIMITS.trial };
     }
 
-    return {
-        allowed: true,
-        plan,
-        limits: PLAN_LIMITS[plan] || PLAN_LIMITS.basic
-    };
+    return { allowed: true, plan, limits: PLAN_LIMITS[plan] || PLAN_LIMITS.basic };
 }
 
-/**
- * Cek apakah user sudah melewati batas transaksi bulan ini
- */
 export async function checkTransaksiLimit(nomorWa) {
     const access = await checkAccess(nomorWa);
     if (!access.allowed) return access;
@@ -84,7 +61,7 @@ export async function checkTransaksiLimit(nomorWa) {
     const maxTrx = access.limits?.maxTransaksiPerBulan ?? 30;
     if (maxTrx === Infinity) return { allowed: true, ...access };
 
-    // Hitung transaksi bulan ini
+    // ✅ Hanya 1 query tambahan untuk hitung transaksi bulan ini
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -112,21 +89,14 @@ export async function checkTransaksiLimit(nomorWa) {
     return { allowed: true, ...access, jumlahTrxBulanIni: jumlah, maxTrx };
 }
 
-/**
- * Cek apakah fitur tertentu tersedia untuk user
- */
 export async function checkFitur(nomorWa, fitur) {
     const access = await checkAccess(nomorWa);
     if (!access.allowed) return false;
     return access.limits?.[fitur] ?? false;
 }
 
-/**
- * Buat pesan status plan untuk user
- */
 export async function getPlanStatusMessage(nomorWa) {
     const access = await checkAccess(nomorWa);
-
     if (!access.allowed) return access.message;
 
     if (access.plan === 'trial') {

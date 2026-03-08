@@ -9,12 +9,13 @@ import {
     processOnboarding
 } from '../onboarding/onboarding.service.js';
 import { checkTransaksiLimit } from '../tier/tier.service.js';
+import { isReportCommand, handleReportMenu } from '../report/report.listener.js';
 
 logger.info("👂 AI Listener: Aktif dan menunggu sinyal dari WhatsApp...");
 
 bus.on('whatsapp.message_received', async (payload) => {
     const { sender, senderAlt, text } = payload;
-    const nomorWa = senderAlt || sender; // Gunakan nomor WA asli jika tersedia
+    const nomorWa = senderAlt || sender;
 
     logger.verbose(`📨 Pesan dari ${nomorWa}: "${text}"`);
 
@@ -23,35 +24,43 @@ bus.on('whatsapp.message_received', async (payload) => {
     // ─────────────────────────────────────────
     const userProfile = await isUserRegistered(nomorWa);
 
-    // User belum terdaftar sama sekali
     if (!userProfile) {
-        if (isInOnboarding(nomorWa)) {
-            // Lanjutkan proses onboarding
+        if (await isInOnboarding(nomorWa)) {
             const { reply, done } = await processOnboarding(nomorWa, text);
             bus.emit('whatsapp.send_message', { to: sender, text: reply });
             if (done) logger.info(`✅ Onboarding selesai untuk ${nomorWa}`);
         } else {
-            // Mulai onboarding baru
-            const welcomeMsg = startOnboarding(nomorWa);
+            const welcomeMsg = await startOnboarding(nomorWa);
             bus.emit('whatsapp.send_message', { to: sender, text: welcomeMsg });
         }
         return;
     }
 
-    // User terdaftar tapi onboarding belum selesai
     if (!userProfile.onboarding_selesai) {
-        if (isInOnboarding(nomorWa)) {
+        if (await isInOnboarding(nomorWa)) {
             const { reply } = await processOnboarding(nomorWa, text);
             bus.emit('whatsapp.send_message', { to: sender, text: reply });
         } else {
-            const welcomeMsg = startOnboarding(nomorWa);
+            const welcomeMsg = await startOnboarding(nomorWa);
             bus.emit('whatsapp.send_message', { to: sender, text: welcomeMsg });
         }
         return;
     }
 
     // ─────────────────────────────────────────
-    // STEP 2: CEK TIER / BATAS TRANSAKSI
+    // STEP 2: CEK INTENT — LAPORAN?
+    // ─────────────────────────────────────────
+    const reportHandled = await handleReportMenu(nomorWa, sender, text, userProfile);
+    if (reportHandled) return;
+
+    const { isReport, periode } = isReportCommand(text);
+    if (isReport) {
+        bus.emit('report.requested', { sender, nomorWa, text, periode, userProfile });
+        return;
+    }
+
+    // ─────────────────────────────────────────
+    // STEP 3: CEK TIER / BATAS TRANSAKSI
     // ─────────────────────────────────────────
     const accessCheck = await checkTransaksiLimit(nomorWa);
     if (!accessCheck.allowed) {
@@ -59,7 +68,6 @@ bus.on('whatsapp.message_received', async (payload) => {
         return;
     }
 
-    // Info sisa hari trial (sekali setiap hari, opsional)
     if (accessCheck.plan === 'trial' && accessCheck.sisaHari <= 3) {
         bus.emit('whatsapp.send_message', {
             to: sender,
@@ -68,7 +76,7 @@ bus.on('whatsapp.message_received', async (payload) => {
     }
 
     // ─────────────────────────────────────────
-    // STEP 3: PROSES AI
+    // STEP 4: PROSES AI
     // ─────────────────────────────────────────
     logger.verbose(`🤖 AI Engine: Memproses pesan dari ${nomorWa}...`);
 
@@ -88,7 +96,7 @@ bus.on('whatsapp.message_received', async (payload) => {
                 logger.warn(`⏳ Rate limit Gemini. Retry ke-${attempt} dalam ${delay / 1000}s...`);
                 await new Promise(res => setTimeout(res, delay));
             } else {
-                logger.error("❌ AI Engine Error:", error.message);
+                logger.error("AI Engine Error:", error.message);
                 bus.emit('whatsapp.send_message', {
                     to: sender,
                     text: "⚠️ Bot sedang sibuk, silakan kirim ulang pesan dalam beberapa detik."
@@ -98,24 +106,33 @@ bus.on('whatsapp.message_received', async (payload) => {
         }
     }
 
-    if (!aiResult || aiResult.length === 0) {
-        logger.warn(`⚠️ AI tidak menemukan data transaksi: "${text}"`);
+    // ─── FIX: Balas user jika AI tidak mengenali transaksi ───────────────────
+    if (!aiResult || !aiResult.total) {
+        logger.warn(`⚠️ AI tidak mengenali transaksi: "${text}"`);
+        bus.emit('whatsapp.send_message', {
+            to: sender,
+            text:
+                `🤔 Saya tidak dapat mengenali transaksi dari pesan tersebut.\n\n` +
+                `Coba format seperti:\n` +
+                `• _"jual ayam 5 ekor @50000"_\n` +
+                `• _"beli tepung 2 kg @15000"_\n` +
+                `• _[foto struk]_\n` +
+                `• _[voice note]_`
+        });
         return;
     }
 
-    logger.info(`✨ AI Berhasil Ekstraksi ${aiResult.length} transaksi:`, JSON.stringify(aiResult, null, 2));
+    logger.info("✨ AI Berhasil Ekstraksi:", JSON.stringify(aiResult, null, 2));
 
-    for (const transaksi of aiResult) {
-        bus.emit('ai.processing_finished', {
-            ...payload,
-            ...transaksi,
-            text,
-            user_id: userProfile.id,
-            pengguna_id_alt: nomorWa,
-            remoteJidAlt: senderAlt,
-            source_type: 'whatsapp',
-            kategori_bisnis: userProfile.kategori_bisnis,
-            plan: accessCheck.plan
-        });
-    }
+    bus.emit('ai.processing_finished', {
+        ...payload,
+        ...aiResult,
+        text,
+        user_id: userProfile.id,
+        pengguna_id_alt: nomorWa,
+        remoteJidAlt: senderAlt,
+        source_type: 'whatsapp',
+        kategori_bisnis: userProfile.kategori_bisnis,
+        plan: accessCheck.plan
+    });
 });

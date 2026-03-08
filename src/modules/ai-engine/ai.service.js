@@ -1,83 +1,67 @@
-// src/modules/ai-engine/ai.service.js
 import logger from '../../shared/logger.js';
+// src/modules/ai-engine/ai.service.js
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite-001';
+
+logger.info(`🤖 AI Model: ${GEMINI_MODEL}`);
 
 export async function processInput(text, context) {
   try {
     const model = genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+      model: GEMINI_MODEL,
       generationConfig: { responseMimeType: "application/json" }
     });
 
     const prompt = `
-      Kamu adalah CFO Virtual KasBot. Ekstrak SEMUA transaksi dari teks berikut: "${text}"
-      Konteks: ${context.kategori}
+      Kamu adalah CFO Virtual KasBot. Ekstrak transaksi dari teks berikut: "${text}"
+      Konteks bisnis: ${context.kategori}
 
-      Perhatian umum:
-      - Teks mungkin berisi LEBIH DARI SATU transaksi dalam satu teks
-      - "beli" / "bayar" / "keluar" = pengeluaran
+      ATURAN TIPE TRANSAKSI:
+      - "beli" / "bayar" / "keluar" / "beli" = pengeluaran
       - "jual" / "terima" / "masuk" = pemasukan
-      - Jika caption/catatan pengirim menyebut "jual" → tipe = pemasukan, meski isi struk adalah struk belanja
-      - Jika ada campuran, ikuti konteks caption jika ada, jika tidak pilih tipe PALING DOMINAN
-      - total = nilai TOTAL AKHIR yang benar-benar dibayar (sudah memperhitungkan semua potongan dan tambahan)
+      - Jika caption/catatan pengirim menyebut "jual" → tipe = pemasukan
+      - Default jika tidak jelas = pengeluaran
 
-      Toleransi teks:
-      - Teks mungkin berasal dari transkripsi voice note, sehingga bisa mengandung
-        typo, kata terpisah, atau ejaan tidak sempurna (contoh: "seha arga" = "seharga",
-        "du aratus" = "dua ratus"). Tebak maksud yang paling logis.
-      - Konversi satuan nilai: "juta" = × 1.000.000, "ribu" = × 1.000, "miliar" = × 1.000.000.000
-        Contoh: "200 juta" → 200000000, "1,5 juta" → 1500000, "500 ribu" → 500000
+      ATURAN TOTAL (PENTING):
+      - Gunakan field "Total" atau "Subtotal" = harga barang yang dibeli
+      - ABAIKAN field: "Tunai", "Total Bayar", "Kembalian", "Cash", "Bayar", "Kembali"
+      - Field "Tunai"/"Total Bayar" = uang yang diserahkan pelanggan, BUKAN nilai transaksi
+      - Contoh: Total=43000, Tunai=100000, Kembalian=57000 → total yang benar = 43000
 
-      Untuk field "harga" per item:
-      - Gunakan harga SATUAN ASLI sebelum potongan apapun
+      ATURAN ITEM:
+      - Ekstrak semua item dengan nama, qty, harga satuan asli sebelum diskon
+      - satuan: tebak dari konteks (minuman→"pcs", kg→"kg", dll), JANGAN null → pakai "pcs"
 
-      Untuk field "penyesuaian" (adjustments):
-      - Tangkap SEMUA jenis potongan maupun biaya tambahan yang ditemukan di struk/teks
-      - Potongan (nilai negatif): diskon, VC, voucher, cashback, potongan member, promo, subsidi
-      - Biaya tambahan (nilai positif): PPN, PPh, pajak, service charge, biaya admin, ongkir, tip, surcharge
-      - Setiap penyesuaian memiliki: nama (label asli dari struk), nilai (angka, selalu positif), tipe ("potongan" atau "tambahan")
-      - Jika tidak ada penyesuaian sama sekali → isi array kosong []
+      ATURAN PENYESUAIAN:
+      - Potongan: diskon, voucher, cashback, promo → tipe "potongan"
+      - Tambahan: PPN, pajak, service charge, ongkir → tipe "tambahan"
+      - Nilai selalu positif
+      - Jika tidak ada → []
 
-      Untuk field "satuan":
-      - Jika disebutkan → gunakan satuan tersebut
-      - Jika struk kasir → tebak paling logis (minuman → "pcs", sabun → "botol", dll)
-      - JANGAN isi null → gunakan "pcs" jika tidak bisa ditebak
-
-      PENTING: Selalu kembalikan dalam bentuk JSON array, meskipun hanya ada satu transaksi.
-      Hasilkan JSON array:
-      [
-        {
-          "total": number,
-          "tipe": "pemasukan" | "pengeluaran",
-          "items": [
-            {"nama": string, "satuan": string, "qty": number, "harga": number}
-          ],
-          "penyesuaian": [
-            {"nama": string, "nilai": number, "tipe": "potongan" | "tambahan"}
-          ]
-        }
-      ]
+      Hasilkan JSON:
+      {
+        "total": number,
+        "tipe": "pemasukan" | "pengeluaran",
+        "items": [
+          {"nama": string, "satuan": string, "qty": number, "harga": number}
+        ],
+        "penyesuaian": [
+          {"nama": string, "nilai": number, "tipe": "potongan" | "tambahan"}
+        ]
+      }
     `;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const parsed = JSON.parse(response.text());
 
-    // ✅ Normalisasi: selalu return array, apapun bentuk response Gemini
-    const normalized = Array.isArray(parsed) ? parsed : [parsed];
-
-    // ✅ Filter hasil yang tidak valid
-    const valid = normalized.filter(r => r && (r.total !== undefined && r.total !== null));
-
-    if (valid.length === 0) return null;
-
-    logger.info(`✅ Gemini ekstrak ${valid.length} transaksi dari input.`);
-    return valid;
-
+    logger.verbose(`✅ Gemini ekstrak: total=${parsed.total}, tipe=${parsed.tipe}, items=${parsed.items?.length}`);
+    return parsed;
+    
   } catch (error) {
-    logger.error("🔍 Detail Error Gemini:", error);
+    logger.error("Detail Error Gemini:", error);
     throw new Error(`Gemini API Failure: ${error.message}`);
   }
 }

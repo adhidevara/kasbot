@@ -92,3 +92,15 @@ CREATE TABLE IF NOT EXISTS onboarding_state (
 -- Auto-hapus state yang lebih dari 1 hari (expired/abandoned)
 CREATE INDEX IF NOT EXISTS idx_onboarding_updated
     ON onboarding_state (updated_at);
+
+-- ============================================================
+-- TAMBAHAN: Tabel report_state (persistent awaiting periode)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS report_state (
+    nomor_wa    TEXT PRIMARY KEY,
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Auto-hapus state lebih dari 10 menit (user tidak jadi pilih)
+CREATE INDEX IF NOT EXISTS idx_report_state_updated
+    ON report_state (updated_at);

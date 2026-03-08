@@ -2,21 +2,44 @@
 import logger from './src/shared/logger.js';
 import 'dotenv/config';
 import Fastify from 'fastify';
+import fastifyStatic from '@fastify/static';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import './src/shared/redis.js';
 import { startWA } from './src/modules/whatsapp/whatsapp.service.js';
+import { startScheduler } from './src/shared/scheduler.js';
 
 import './src/modules/ai-engine/ai.listener.js';
 import './src/modules/finance/finance.listener.js';
 import './src/modules/cfo-virtual/cfo.listener.js';
 import './src/modules/media/media.listener.js';
+import './src/modules/report/report.listener.js';
 import './src/shared/errorHandler.js';
-import './src/shared/queue.worker.js'; // ✅ Queue workers
+import './src/shared/queue.worker.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const fastify = Fastify({ logger: false, disableRequestLogging: true });
+
+// ─── Serve static files dari folder /public ───────────────────────────────────
+await fastify.register(fastifyStatic, {
+    root: join(__dirname, 'public'),
+    prefix: '/',
+});
+
+// ─── Redirect root → api-doc ──────────────────────────────────────────────────
+fastify.get('/', (req, reply) => {
+    reply.redirect('/api-doc.html');
+});
 
 const start = async () => {
     try {
         await fastify.listen({ port: 3000, host: '0.0.0.0' });
         logger.info('🚀 Server Aktif di http://localhost:3000');
+        logger.info('📄 API Docs: http://localhost:3000/api-doc.html');
+
+        startScheduler();
+
         logger.info('--- Mencoba Koneksi WhatsApp ---');
         await startWA();
     } catch (err) {

@@ -8,7 +8,9 @@ import makeWASocket, {
 import qrcode from 'qrcode-terminal';
 import bus from '../../shared/eventBus.js';
 import pino from 'pino';
-import { messageQueue, mediaQueue } from '../../shared/queue.js';
+import { messageQueue } from '../../shared/queue.js';
+
+// ⚠️ mediaQueue TIDAK dipakai — buffer biner tidak bisa disimpan di Redis
 
 let sockInstance = null;
 
@@ -62,11 +64,21 @@ export async function startWA() {
             }
         });
 
-        sock.ev.on('messages.upsert', async ({ messages }) => {
+        sock.ev.on('messages.upsert', async ({ messages, type: upsertType }) => {
             const msg = messages[0];
 
             if (!msg.message || msg.message.protocolMessage) return;
             if (msg.key.fromMe) return;
+
+            // Skip pesan history saat sync awal setelah reconnect
+            if (upsertType === 'prepend') return;
+
+            // Skip pesan lebih dari 30 detik yang lalu
+            const msgTime = (msg.messageTimestamp || 0) * 1000;
+            if (Date.now() - msgTime > 30_000) {
+                logger.verbose(`⏭️ Skip pesan lama: ${new Date(msgTime).toISOString()}`);
+                return;
+            }
 
             logger.verbose('📩 Event masuk: ' + JSON.stringify(msg.key));
 
@@ -88,7 +100,6 @@ export async function startWA() {
 
                 logger.verbose(`🔍 Teks: [${sender}] -> ${text}`);
 
-                // ✅ Masukkan ke queue, bukan langsung proses
                 await messageQueue.add('text-message', {
                     type: 'text',
                     payload: { sender, senderAlt, text, source_type: 'teks' }
@@ -96,7 +107,7 @@ export async function startWA() {
                 return;
             }
 
-            // ─── TIPE 2: Gambar ───────────────────────────
+            // ─── TIPE 2: Gambar → langsung emit (buffer tidak bisa di Redis) ──
             if (type === 'imageMessage') {
                 const caption = msg.message.imageMessage?.caption || '';
                 logger.verbose(`🖼️ Gambar dari [${sender}]`);
@@ -112,10 +123,9 @@ export async function startWA() {
                         reuploadRequest: sock.updateMediaMessage
                     });
 
-                    // ✅ Masukkan ke media queue
-                    await mediaQueue.add('image-message', {
-                        type: 'image',
-                        payload: { sender, senderAlt, imageBuffer: buffer, caption, source_type: 'foto' }
+                    // Langsung emit — bypass queue
+                    bus.emit('whatsapp.image_received', {
+                        sender, senderAlt, imageBuffer: buffer, caption, source_type: 'foto'
                     });
                 } catch (err) {
                     logger.error('Gagal download gambar:', err.message);
@@ -127,7 +137,7 @@ export async function startWA() {
                 return;
             }
 
-            // ─── TIPE 3: Voice Note ───────────────────────
+            // ─── TIPE 3: Voice Note → langsung emit (buffer tidak bisa di Redis)
             if (type === 'audioMessage') {
                 const isPtt = msg.message.audioMessage?.ptt;
                 if (!isPtt) return;
@@ -145,10 +155,9 @@ export async function startWA() {
                         reuploadRequest: sock.updateMediaMessage
                     });
 
-                    // ✅ Masukkan ke media queue
-                    await mediaQueue.add('audio-message', {
-                        type: 'audio',
-                        payload: { sender, senderAlt, audioBuffer: buffer, source_type: 'suara' }
+                    // Langsung emit — bypass queue
+                    bus.emit('whatsapp.audio_received', {
+                        sender, senderAlt, audioBuffer: buffer, source_type: 'suara'
                     });
                 } catch (err) {
                     logger.error('Gagal download audio:', err.message);
