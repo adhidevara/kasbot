@@ -1,1229 +1,1653 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KasBot API Documentation</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #1a1a24;
-    --border: #2a2a3a;
-    --accent: #00e5a0;
-    --accent2: #7c6af7;
-    --accent3: #f7c06a;
-    --danger: #ff5c5c;
-    --text: #e8e8f0;
-    --text-dim: #6b6b80;
-    --text-muted: #3d3d50;
-    --get: #00e5a0;
-    --post: #7c6af7;
-    --delete: #ff5c5c;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    min-height: 100vh;
-    position: relative;
-    z-index: 1;
-  }
-  .sidebar {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .sidebar-header {
-    padding: 28px 24px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-  .logo-icon {
-    width: 32px; height: 32px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-  }
-  .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
-  .version-badge {
-    display: inline-block;
-    background: rgba(0,229,160,0.1); color: var(--accent);
-    font-family: 'JetBrains Mono', monospace; font-size: 10px;
-    padding: 2px 8px; border-radius: 4px;
-    border: 1px solid rgba(0,229,160,0.2); margin-top: 4px;
-  }
-  .base-url {
-    font-family: 'JetBrains Mono', monospace; font-size: 10px;
-    color: var(--text-dim); margin-top: 8px;
-    background: var(--surface2); padding: 6px 10px;
-    border-radius: 6px; border: 1px solid var(--border);
-  }
-  .nav-section { padding: 16px 0 8px; }
-  .nav-label {
-    font-size: 9px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--text-muted);
-    padding: 0 24px 8px;
-  }
-  .nav-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 24px; cursor: pointer; transition: all 0.15s;
-    font-size: 13px; color: var(--text-dim); text-decoration: none;
-  }
-  .nav-item:hover, .nav-item.active {
-    background: rgba(0,229,160,0.05); color: var(--text);
-  }
-  .nav-item.active { border-left: 2px solid var(--accent); color: var(--accent); }
-  .method-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .main { padding: 48px 64px; max-width: 920px; }
-  .page-header { margin-bottom: 56px; }
-  .page-title {
-    font-size: 42px; font-weight: 800; letter-spacing: -2px;
-    line-height: 1; margin-bottom: 12px;
-    background: linear-gradient(135deg, var(--text) 40%, var(--accent));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .page-desc { color: var(--text-dim); font-size: 15px; line-height: 1.6; max-width: 560px; }
-  .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
-  .info-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 20px;
-  }
-  .info-card-label {
-    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
-  }
-  .info-card-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); }
-  .section { margin-bottom: 64px; scroll-margin-top: 32px; }
-  .section-title {
-    font-size: 13px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--text-muted);
-    margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
-  }
-  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .endpoint {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; margin-bottom: 16px; overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .endpoint:hover { border-color: var(--accent2); }
-  .endpoint-header {
-    padding: 18px 24px; display: flex; align-items: center;
-    gap: 14px; cursor: pointer; user-select: none;
-  }
-  .method-badge {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-    padding: 4px 10px; border-radius: 6px; letter-spacing: 0.5px;
-    min-width: 60px; text-align: center; flex-shrink: 0;
-  }
-  .method-GET    { background: rgba(0,229,160,0.12); color: var(--get); border: 1px solid rgba(0,229,160,0.25); }
-  .method-POST   { background: rgba(124,106,247,0.12); color: var(--post); border: 1px solid rgba(124,106,247,0.25); }
-  .method-DELETE { background: rgba(255,92,92,0.12); color: var(--danger); border: 1px solid rgba(255,92,92,0.25); }
-  .endpoint-path { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); flex: 1; }
-  .endpoint-path span { color: var(--accent3); }
-  .endpoint-desc { font-size: 12px; color: var(--text-dim); }
-  .auth-required {
-    display: flex; align-items: center; gap: 4px; font-size: 11px;
-    color: var(--accent3); background: rgba(247,192,106,0.1);
-    padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(247,192,106,0.2);
-    flex-shrink: 0; font-family: 'JetBrains Mono', monospace;
-  }
-  .endpoint-body {
-    border-top: 1px solid var(--border); padding: 24px;
-    display: none; background: var(--surface2);
-  }
-  .endpoint.open .endpoint-body { display: block; }
-  .endpoint-chevron { color: var(--text-muted); transition: transform 0.2s; font-size: 12px; }
-  .endpoint.open .endpoint-chevron { transform: rotate(180deg); }
-  .body-section { margin-bottom: 24px; }
-  .body-section:last-child { margin-bottom: 0; }
-  .body-label {
-    font-size: 11px; font-weight: 700; letter-spacing: 1px;
-    text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;
-  }
-  .param-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .param-table th {
-    text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 700;
-    letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-  }
-  .param-table td { padding: 10px 12px; border-bottom: 1px solid rgba(42,42,58,0.5); vertical-align: top; }
-  .param-table tr:last-child td { border-bottom: none; }
-  .param-name { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 12px; }
-  .param-type { font-family: 'JetBrains Mono', monospace; color: var(--accent2); font-size: 11px; }
-  .param-required {
-    font-size: 10px; color: var(--danger);
-    background: rgba(255,92,92,0.1); padding: 2px 6px;
-    border-radius: 3px; border: 1px solid rgba(255,92,92,0.2);
-  }
-  .param-optional {
-    font-size: 10px; color: var(--text-muted);
-    background: rgba(107,107,128,0.1); padding: 2px 6px;
-    border-radius: 3px; border: 1px solid rgba(107,107,128,0.2);
-  }
-  .param-desc { color: var(--text-dim); font-size: 12px; }
-  .code-block {
-    background: #0d0d14; border: 1px solid var(--border);
-    border-radius: 10px; overflow: hidden;
-  }
-  .code-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px; border-bottom: 1px solid var(--border);
-    background: rgba(255,255,255,0.02);
-  }
-  .code-lang { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: 1px; }
-  .copy-btn {
-    font-family: 'JetBrains Mono', monospace; font-size: 10px;
-    color: var(--text-muted); background: none;
-    border: 1px solid var(--border); padding: 3px 8px;
-    border-radius: 4px; cursor: pointer; transition: all 0.15s;
-  }
-  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
-  pre {
-    padding: 16px; font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; line-height: 1.7; overflow-x: auto; color: var(--text-dim);
-  }
-  .json-key { color: #7c6af7; }
-  .json-str { color: #00e5a0; }
-  .json-num { color: #f7c06a; }
-  .json-bool { color: #ff5c5c; }
-  .json-comment { color: var(--text-muted); font-style: italic; }
-  .curl-str { color: #f7c06a; }
-  .curl-flag { color: #7c6af7; }
-  .curl-url { color: #00e5a0; }
-  .curl-comment { color: var(--text-muted); font-style: italic; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kala Studio · API Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --black-2: #111111;
+      --black-3: #1a1a1a;
+      --black-4: #222222;
+      --gold: #C9A84C;
+      --gold-light: #E8C96A;
+      --gold-muted: rgba(201, 168, 76, 0.15);
+      --gold-border: rgba(201, 168, 76, 0.25);
+      --white: #F5F0E8;
+      --white-muted: rgba(245, 240, 232, 0.5);
+      --white-faint: rgba(245, 240, 232, 0.08);
+      --green: #4CAF7D;
+      --blue: #5B8FD4;
+      --red: #D45B5B;
+      --orange: #D4855B;
+    }
 
-  /* Tab system */
-  .tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
-  .tab-btn {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px;
-    padding: 5px 14px; border-radius: 6px; cursor: pointer;
-    border: 1px solid var(--border); color: var(--text-muted);
-    background: none; transition: all 0.15s;
-  }
-  .tab-btn:hover { color: var(--text); border-color: var(--text-muted); }
-  .tab-btn.active { background: rgba(124,106,247,0.15); color: var(--accent2); border-color: rgba(124,106,247,0.4); }
-  .tab-btn.active-200 { background: rgba(0,229,160,0.1); color: var(--get); border-color: rgba(0,229,160,0.3); }
-  .tab-btn.active-4xx { background: rgba(255,92,92,0.1); color: var(--danger); border-color: rgba(255,92,92,0.3); }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .auth-box {
-    background: rgba(247,192,106,0.05); border: 1px solid rgba(247,192,106,0.2);
-    border-radius: 10px; padding: 16px 20px;
-    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 24px;
-  }
-  .info-box {
-    background: rgba(124,106,247,0.05); border: 1px solid rgba(124,106,247,0.2);
-    border-radius: 10px; padding: 16px 20px;
-    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 24px;
-  }
-  .auth-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-  .auth-text { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
-  .auth-text code {
-    font-family: 'JetBrains Mono', monospace; color: var(--accent3);
-    font-size: 12px; background: rgba(247,192,106,0.1); padding: 1px 5px; border-radius: 3px;
-  }
-  .info-text { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
-  .info-text code {
-    font-family: 'JetBrains Mono', monospace; color: var(--accent2);
-    font-size: 12px; background: rgba(124,106,247,0.1); padding: 1px 5px; border-radius: 3px;
-  }
-  .wa-status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-  .wa-status-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 16px; text-align: center;
-  }
-  .wa-status-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-bottom: 4px; }
-  .status-connected { color: var(--get); }
-  .status-waiting { color: var(--accent3); }
-  .status-disconnected { color: var(--danger); }
-  .wa-status-label { font-size: 11px; color: var(--text-muted); }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    html { scroll-behavior: smooth; }
 
-  .no-body-note {
-    font-family: 'JetBrains Mono', monospace; font-size: 12px;
-    color: var(--text-muted); font-style: italic;
-    padding: 12px 16px; background: #0d0d14;
-    border: 1px solid var(--border); border-radius: 10px;
-  }
-</style>
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'DM Sans', 'sans-serif';
+      font-weight: 400;
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Grain Overlay ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ─── Layout ─── */
+    .layout {
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background: var(--black-2);
+      border-right: 1px solid var(--gold-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 3px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--gold-border); border-radius: 2px; }
+
+    .sidebar-header {
+      padding: 2rem 1.75rem 1.5rem;
+      border-bottom: 1px solid var(--gold-border);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .brand-logo {
+      width: auto;
+      height: 52px;
+      margin-bottom: 0.6rem;
+    }
+
+    .brand-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--white);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    .brand-tagline {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--gold);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-style: italic;
+      font-family: 'Cormorant Garamond', serif;
+      margin-top: 0.2rem;
+    }
+
+    .sidebar-nav {
+      padding: 1.5rem 0;
+      flex: 1;
+    }
+
+    .nav-section {
+      margin-bottom: 0.25rem;
+    }
+
+    .nav-section-title {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      padding: 0.75rem 1.75rem 0.4rem;
+      font-weight: 500;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.45rem 1.75rem;
+      font-size: 0.78rem;
+      color: var(--white-muted);
+      text-decoration: none;
+      transition: all 0.2s;
+      border-left: 2px solid transparent;
+    }
+
+    .nav-item:hover {
+      color: var(--white);
+      background: var(--white-faint);
+      border-left-color: var(--gold-border);
+    }
+
+    .nav-item.active {
+      color: var(--gold-light);
+      border-left-color: var(--gold);
+      background: var(--gold-muted);
+    }
+
+    .nav-method {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 500;
+      min-width: 38px;
+      text-align: center;
+    }
+
+    .method-get { background: rgba(91, 143, 212, 0.15); color: #5B8FD4; }
+    .method-post { background: rgba(76, 175, 125, 0.15); color: #4CAF7D; }
+    .method-delete { background: rgba(212, 91, 91, 0.15); color: #D45B5B; }
+
+    .sidebar-footer {
+      padding: 1.25rem 1.75rem;
+      border-top: 1px solid var(--gold-border);
+    }
+
+    .version-badge {
+      font-size: 0.65rem;
+      color: var(--white-muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── Main Content ─── */
+    .main {
+      margin-left: 280px;
+      padding: 0;
+    }
+
+    /* ─── Hero ─── */
+    .hero {
+      padding: 5rem 4rem 4rem;
+      border-bottom: 1px solid var(--gold-border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(201, 168, 76, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 2rem;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      color: var(--white);
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    .hero-desc {
+      font-size: 0.9rem;
+      color: var(--white-muted);
+      max-width: 560px;
+      line-height: 1.8;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .meta-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .meta-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--white);
+    }
+
+    /* ─── Base URL Banner ─── */
+    .base-url-banner {
+      margin: 2.5rem 4rem;
+      padding: 1.25rem 1.75rem;
+      background: var(--black-3);
+      border: 1px solid var(--gold-border);
+      border-left: 3px solid var(--gold);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .base-url-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+
+    .base-url-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--white);
+    }
+
+    /* ─── Content Sections ─── */
+    .content {
+      padding: 0 4rem 6rem;
+    }
+
+    .section {
+      margin-bottom: 5rem;
+      scroll-margin-top: 2rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--gold-border);
+    }
+
+    .section-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.8rem;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      min-width: 2rem;
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: var(--white);
+      letter-spacing: 0.02em;
+    }
+
+    /* ─── Endpoint Card ─── */
+    .endpoint {
+      margin-bottom: 1.5rem;
+      background: var(--black-2);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .endpoint:hover {
+      border-color: var(--gold-border);
+    }
+
+    .endpoint-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .endpoint-header:hover { background: var(--white-faint); }
+
+    .method-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.2rem 0.6rem;
+      border-radius: 3px;
+      min-width: 52px;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-get { background: rgba(91, 143, 212, 0.12); color: #5B8FD4; border: 1px solid rgba(91,143,212,0.25); }
+    .badge-post { background: rgba(76, 175, 125, 0.12); color: #4CAF7D; border: 1px solid rgba(76,175,125,0.25); }
+    .badge-delete { background: rgba(212, 91, 91, 0.12); color: #D45B5B; border: 1px solid rgba(212,91,91,0.25); }
+
+    .endpoint-path {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--white);
+      flex: 1;
+    }
+
+    .endpoint-desc {
+      font-size: 0.75rem;
+      color: var(--white-muted);
+    }
+
+    .endpoint-toggle {
+      color: var(--white-muted);
+      font-size: 0.7rem;
+      transition: transform 0.2s;
+    }
+
+    .endpoint.open .endpoint-toggle { transform: rotate(180deg); }
+
+    .endpoint-body {
+      display: none;
+      padding: 0 1.5rem 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .endpoint.open .endpoint-body { display: block; }
+
+    /* ─── Auth Badge ─── */
+    .auth-required {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.65rem;
+      color: var(--gold);
+      background: var(--gold-muted);
+      border: 1px solid var(--gold-border);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      margin: 1rem 0 0.75rem;
+    }
+
+    /* ─── Code Block ─── */
+    .code-block {
+      background: var(--black);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      background: var(--black-3);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .code-lang {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .copy-btn {
+      font-size: 0.65rem;
+      color: var(--white-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .copy-btn:hover { color: var(--white); background: var(--white-faint); }
+    .copy-btn.copied { color: var(--green); }
+
+    .code-content {
+      padding: 1.1rem 1.25rem;
+      overflow-x: auto;
+    }
+
+    .code-content::-webkit-scrollbar { height: 3px; }
+    .code-content::-webkit-scrollbar-track { background: transparent; }
+    .code-content::-webkit-scrollbar-thumb { background: var(--gold-border); }
+
+    pre {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      line-height: 1.7;
+      color: var(--white);
+      white-space: pre;
+    }
+
+    .c-gold { color: var(--gold-light); }
+    .c-green { color: var(--green); }
+    .c-blue { color: var(--blue); }
+    .c-red { color: var(--red); }
+    .c-orange { color: var(--orange); }
+    .c-muted { color: var(--white-muted); }
+
+    /* ─── Response Table ─── */
+    .field-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+      margin: 0.75rem 0;
+    }
+
+    .field-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: var(--black-3);
+      font-weight: 400;
+      border-bottom: 1px solid var(--gold-border);
+    }
+
+    .field-table td {
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: top;
+    }
+
+    .field-table tr:last-child td { border-bottom: none; }
+
+    .field-name {
+      font-family: 'DM Mono', monospace;
+      color: var(--blue);
+      font-size: 0.73rem;
+    }
+
+    .field-type {
+      font-family: 'DM Mono', monospace;
+      color: var(--orange);
+      font-size: 0.7rem;
+    }
+
+    .field-required {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: rgba(212, 91, 91, 0.1);
+      color: var(--red);
+      border: 1px solid rgba(212,91,91,0.2);
+    }
+
+    .field-optional {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.04);
+      color: var(--white-muted);
+    }
+
+    .field-desc { color: var(--white-muted); }
+
+    /* ─── Response Example ─── */
+    .resp-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--white-muted);
+      margin: 1rem 0 0.4rem;
+    }
+
+    /* ─── Info Box ─── */
+    .info-box {
+      padding: 1rem 1.25rem;
+      border-radius: 3px;
+      font-size: 0.78rem;
+      margin: 0.75rem 0;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .info-box.info {
+      background: rgba(91, 143, 212, 0.08);
+      border: 1px solid rgba(91, 143, 212, 0.2);
+      color: #8ab4e8;
+    }
+
+    .info-box.warning {
+      background: rgba(201, 168, 76, 0.08);
+      border: 1px solid var(--gold-border);
+      color: var(--gold-light);
+    }
+
+    .info-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+    /* ─── Plan Badges ─── */
+    .plan-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.5rem 0; }
+
+    .plan-badge {
+      font-size: 0.62rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+
+    .plan-trial { background: rgba(255,255,255,0.06); color: var(--white-muted); border: 1px solid rgba(255,255,255,0.1); }
+    .plan-basic { background: rgba(91, 143, 212, 0.1); color: #5B8FD4; border: 1px solid rgba(91,143,212,0.25); }
+    .plan-pro { background: var(--gold-muted); color: var(--gold-light); border: 1px solid var(--gold-border); }
+
+    /* ─── Divider ─── */
+    .divider {
+      height: 1px;
+      background: var(--gold-border);
+      margin: 1.5rem 0;
+      opacity: 0.5;
+    }
+
+    /* ─── Sub Label ─── */
+    .sub-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--white-muted);
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    /* ─── Tab System ─── */
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin: 1rem 0 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--white-muted);
+      background: none;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .tab-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.25); }
+
+    .tab-btn.active-req {
+      background: rgba(124, 106, 247, 0.12);
+      color: #a89cf7;
+      border-color: rgba(124,106,247,0.35);
+    }
+
+    .tab-btn.active-200 {
+      background: rgba(76, 175, 125, 0.12);
+      color: var(--green);
+      border-color: rgba(76,175,125,0.35);
+    }
+
+    .tab-btn.active-4xx {
+      background: rgba(212, 91, 91, 0.12);
+      color: var(--red);
+      border-color: rgba(212,91,91,0.35);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── WA Status Cards ─── */
+    .wa-status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin: 1rem 0 1.25rem;
+    }
+
+    .wa-status-card {
+      background: var(--black-3);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      text-align: center;
+    }
+
+    .wa-status-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+    }
+
+    .wa-status-desc { font-size: 0.7rem; color: var(--white-muted); }
+    .wa-connected { color: var(--green); }
+    .wa-waiting { color: var(--gold-light); }
+    .wa-disconnected { color: var(--red); }
+
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--black-4); border-radius: 2px; }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero { animation: fadeUp 0.6s ease both; }
+    .base-url-banner { animation: fadeUp 0.6s 0.1s ease both; }
+    .section { animation: fadeUp 0.5s ease both; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .hero, .content { padding-left: 1.5rem; padding-right: 1.5rem; }
+      .base-url-banner { margin-left: 1.5rem; margin-right: 1.5rem; }
+    }
+  </style>
 </head>
 <body>
+
 <div class="layout">
 
-  <!-- Sidebar -->
+  <!-- ─── Sidebar ─── -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="logo">
-        <div class="logo-icon">🤖</div>
-        <span class="logo-text">KALA</span>
-      </div>
-      <div class="version-badge">API v1.0</div>
-      <div class="base-url">http://localhost:3000/api</div>
+      <img src="/logo.svg" alt="Kala Studio" class="brand-logo" onerror="this.style.display='none'" />
+      <span class="brand-tagline">Waktu Adalah Milikmu.</span>
     </div>
-    <nav>
+
+    <nav class="sidebar-nav">
+
       <div class="nav-section">
-        <div class="nav-label">Overview</div>
-        <a class="nav-item active" href="#overview">Pengantar</a>
-        <a class="nav-item" href="#authentication">Authentication</a>
+        <div class="nav-section-title">Autentikasi</div>
+        <a href="#auth" class="nav-item">
+          <span class="nav-method method-post">POST</span>
+          Login
+        </a>
+        <a href="#wa-status" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Status WA
+        </a>
+        <a href="#wa-qr" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          QR Code
+        </a>
+        <a href="#wa-logout" class="nav-item">
+          <span class="nav-method method-post">POST</span>
+          Logout WA
+        </a>
+        <a href="#wa-reconnect" class="nav-item">
+          <span class="nav-method method-post">POST</span>
+          Reconnect WA
+        </a>
       </div>
+
       <div class="nav-section">
-        <div class="nav-label">WhatsApp</div>
-        <a class="nav-item" href="#wa-status"><span class="method-dot" style="background:var(--get)"></span>GET /wa/status</a>
-        <a class="nav-item" href="#wa-qr"><span class="method-dot" style="background:var(--get)"></span>GET /wa/qr</a>
-        <a class="nav-item" href="#wa-logout"><span class="method-dot" style="background:var(--post)"></span>POST /wa/logout</a>
-        <a class="nav-item" href="#wa-reconnect"><span class="method-dot" style="background:var(--post)"></span>POST /wa/reconnect</a>
+        <div class="nav-section-title">Pengguna</div>
+        <a href="#user-profile" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Profil
+        </a>
+        <a href="#user-plan" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Plan & Kuota
+        </a>
       </div>
+
       <div class="nav-section">
-        <div class="nav-label">Auth</div>
-        <a class="nav-item" href="#auth-login"><span class="method-dot" style="background:var(--post)"></span>POST /auth/login</a>
+        <div class="nav-section-title">Transaksi</div>
+        <a href="#trx-list" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          List Transaksi
+        </a>
+        <a href="#trx-detail" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Detail Transaksi
+        </a>
+        <a href="#trx-create" class="nav-item">
+          <span class="nav-method method-post">POST</span>
+          Buat Transaksi
+        </a>
+        <a href="#trx-delete" class="nav-item">
+          <span class="nav-method method-delete">DEL</span>
+          Hapus Transaksi
+        </a>
       </div>
+
       <div class="nav-section">
-        <div class="nav-label">User</div>
-        <a class="nav-item" href="#user-profile"><span class="method-dot" style="background:var(--get)"></span>GET /user/profile</a>
-        <a class="nav-item" href="#user-plan"><span class="method-dot" style="background:var(--get)"></span>GET /user/plan</a>
+        <div class="nav-section-title">Laporan</div>
+        <a href="#lap-harian" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Harian
+        </a>
+        <a href="#lap-mingguan" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Mingguan
+        </a>
+        <a href="#lap-bulanan" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Bulanan
+        </a>
       </div>
+
       <div class="nav-section">
-        <div class="nav-label">Transaksi</div>
-        <a class="nav-item" href="#trx-list"><span class="method-dot" style="background:var(--get)"></span>GET /transaksi</a>
-        <a class="nav-item" href="#trx-detail"><span class="method-dot" style="background:var(--get)"></span>GET /transaksi/:id</a>
-        <a class="nav-item" href="#trx-create"><span class="method-dot" style="background:var(--post)"></span>POST /transaksi</a>
-        <a class="nav-item" href="#trx-delete"><span class="method-dot" style="background:var(--danger)"></span>DELETE /transaksi/:id</a>
+        <div class="nav-section-title">Insight</div>
+        <a href="#anomali" class="nav-item">
+          <span class="nav-method method-get">GET</span>
+          Anomali & Insight
+        </a>
       </div>
-      <div class="nav-section">
-        <div class="nav-label">Laporan</div>
-        <a class="nav-item" href="#lap-harian"><span class="method-dot" style="background:var(--get)"></span>GET /laporan/harian</a>
-        <a class="nav-item" href="#lap-mingguan"><span class="method-dot" style="background:var(--get)"></span>GET /laporan/mingguan</a>
-        <a class="nav-item" href="#lap-bulanan"><span class="method-dot" style="background:var(--get)"></span>GET /laporan/bulanan</a>
-      </div>
-      <div class="nav-section">
-        <div class="nav-label">Anomali</div>
-        <a class="nav-item" href="#anomali-insight"><span class="method-dot" style="background:var(--get)"></span>GET /anomali/insight</a>
-      </div>
+
     </nav>
+
+    <div class="sidebar-footer">
+      <div class="version-badge">API v1.0 · Nata Engine</div>
+    </div>
   </aside>
 
-  <!-- Main -->
+  <!-- ─── Main ─── -->
   <main class="main">
 
-    <!-- Overview -->
-    <div class="page-header" id="overview">
-      <h1 class="page-title">API Reference</h1>
-      <p class="page-desc">REST API untuk integrasi dashboard KasBot. Semua endpoint menggunakan JSON dan autentikasi JWT Bearer token.</p>
-      <div class="info-grid">
-        <div class="info-card">
-          <div class="info-card-label">Base URL</div>
-          <div class="info-card-value">localhost:3000</div>
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-eyebrow">Dokumentasi API</div>
+      <h1 class="hero-title">Nata <em>REST API</em></h1>
+      <p class="hero-desc">
+        Antarmuka pemrograman untuk mengintegrasikan kecerdasan keuangan Nata ke dalam aplikasi Anda.
+        Semua endpoint memerlukan autentikasi JWT kecuali dinyatakan lain.
+      </p>
+      <div class="hero-meta">
+        <div class="meta-item">
+          <span class="meta-label">Versi</span>
+          <span class="meta-value">v1.0.0</span>
         </div>
-        <div class="info-card">
-          <div class="info-card-label">Format</div>
-          <div class="info-card-value">application/json</div>
+        <div class="meta-item">
+          <span class="meta-label">Format</span>
+          <span class="meta-value">JSON</span>
         </div>
-        <div class="info-card">
-          <div class="info-card-label">Auth</div>
-          <div class="info-card-value">Bearer JWT</div>
+        <div class="meta-item">
+          <span class="meta-label">Auth</span>
+          <span class="meta-value">Bearer JWT</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Timezone</span>
+          <span class="meta-value">Asia/Jakarta</span>
         </div>
       </div>
     </div>
 
-    <!-- Authentication -->
-    <div class="section" id="authentication">
-      <div class="section-title">Authentication</div>
-      <div class="auth-box">
-        <div class="auth-icon">🔑</div>
-        <div class="auth-text">
-          Semua endpoint kecuali <code>POST /api/auth/login</code> membutuhkan header:<br><br>
-          <code>Authorization: Bearer &lt;token&gt;</code><br><br>
-          Token didapat dari response login dan berlaku selama <code>7 hari</code>.
-        </div>
+    <!-- Base URL -->
+    <div class="base-url-banner">
+      <div>
+        <div class="base-url-label">Base URL</div>
+        <div class="base-url-value">https://kalaproject-prod.up.railway.app</div>
       </div>
+    </div>
 
-      <!-- POST /auth/login -->
-      <div class="endpoint" id="auth-login">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-POST">POST</span>
-          <span class="endpoint-path">/api/auth/login</span>
-          <span class="endpoint-desc">Login dengan nomor WhatsApp</span>
-          <span class="endpoint-chevron">▼</span>
+    <div class="content">
+
+      <!-- ════════════════════════════════════════ -->
+      <!-- AUTENTIKASI -->
+      <!-- ════════════════════════════════════════ -->
+      <section class="section" id="auth-section">
+        <div class="section-header">
+          <span class="section-number">01</span>
+          <h2 class="section-title">Autentikasi</h2>
         </div>
-        <div class="endpoint-body">
 
-          <div class="body-section">
-            <div class="body-label">Request Body</div>
-            <table class="param-table">
-              <tr><th>Field</th><th>Type</th><th>Status</th><th>Deskripsi</th></tr>
-              <tr>
-                <td class="param-name">nomor_wa</td>
-                <td class="param-type">string</td>
-                <td><span class="param-required">required</span></td>
-                <td class="param-desc">Format internasional tanpa +. Contoh: <code style="font-family:monospace;color:var(--accent);font-size:11px">628123456789</code></td>
-              </tr>
-            </table>
+        <!-- Login -->
+        <div class="endpoint open" id="auth">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/auth/login</span>
+            <span class="endpoint-desc">Login dengan nomor WA</span>
+            <span class="endpoint-toggle">▾</span>
           </div>
-
-          <div class="body-section">
+          <div class="endpoint-body">
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">
+              Login menggunakan nomor WhatsApp. User harus sudah terdaftar via onboarding bot. Mengembalikan JWT token berlaku 7 hari.
+            </p>
+            <div class="info-box info">
+              <span class="info-icon">ℹ</span>
+              <span>Tidak memerlukan password. Identitas diverifikasi melalui kepemilikan nomor WhatsApp.</span>
+            </div>
+            <div class="sub-label">Request Body</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA format internasional. Contoh: <code style="color:var(--gold-light)">628123456789</code></td></tr>
+              </tbody>
+            </table>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'login-req')">📤 Request</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'login-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'login-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'login-404')">❌ 404</button>
             </div>
-
             <div id="login-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-flag">-X POST</span> <span class="curl-url">http://localhost:3000/api/auth/login</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Content-Type: application/json"</span> \
-  <span class="curl-flag">-d</span> <span class="curl-str">'{
-    "nomor_wa": "628123456789"
-  }'</span></pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/auth/login \
+  -H <span class="c-green">"Content-Type: application/json"</span> \
+  -d <span class="c-green">'{"nomor_wa": "628123456789"}'</span></pre></div>
+            </div>
             </div>
             <div id="login-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">true</span>,
-  <span class="json-key">"token"</span>: <span class="json-str">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
-  <span class="json-key">"user"</span>: {
-    <span class="json-key">"id"</span>: <span class="json-str">"uuid-xxx"</span>,
-    <span class="json-key">"nomor_wa"</span>: <span class="json-str">"628123456789"</span>,
-    <span class="json-key">"nama_bisnis"</span>: <span class="json-str">"Warung Bu Sari"</span>,
-    <span class="json-key">"plan"</span>: <span class="json-str">"trial"</span>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"token"</span>: <span class="c-green">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
+  <span class="c-blue">"expires_in"</span>: <span class="c-orange">604800</span>,
+  <span class="c-blue">"user"</span>: {
+    <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"628123456789"</span>,
+    <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Warung Pak Anto"</span>,
+    <span class="c-blue">"plan"</span>: <span class="c-green">"basic"</span>
   }
-}</pre>
-              </div>
+}</pre></div>
+            </div>
             </div>
             <div id="login-404" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Nomor WA tidak terdaftar"</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">false</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"Nomor WA tidak terdaftar"</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- WhatsApp -->
-    <div class="section" id="wa">
-      <div class="section-title">WhatsApp Connection</div>
-      <div class="wa-status-grid">
-        <div class="wa-status-card"><div class="wa-status-value status-connected">connected</div><div class="wa-status-label">WA terhubung aktif</div></div>
-        <div class="wa-status-card"><div class="wa-status-value status-waiting">waiting_qr</div><div class="wa-status-label">Menunggu scan QR</div></div>
-        <div class="wa-status-card"><div class="wa-status-value status-disconnected">disconnected</div><div class="wa-status-label">Tidak terhubung</div></div>
-      </div>
-
-      <!-- GET /wa/status -->
-      <div class="endpoint" id="wa-status">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/auth/wa/status</span>
-          <span class="endpoint-desc">Cek status koneksi WhatsApp</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <!-- WA Status -->
+        <div class="endpoint" id="wa-status">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/auth/wa/status</span>
+            <span class="endpoint-desc">Status koneksi WhatsApp</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin:0.75rem 0;">
+              Mengecek status koneksi WhatsApp bot. Gunakan endpoint ini untuk polling status sebelum menampilkan QR.
+            </p>
+            <div class="wa-status-grid">
+              <div class="wa-status-card">
+                <div class="wa-status-val wa-connected">connected</div>
+                <div class="wa-status-desc">WA terhubung aktif</div>
+              </div>
+              <div class="wa-status-card">
+                <div class="wa-status-val wa-waiting">waiting_qr</div>
+                <div class="wa-status-desc">Menunggu scan QR</div>
+              </div>
+              <div class="wa-status-card">
+                <div class="wa-status-val wa-disconnected">disconnected</div>
+                <div class="wa-status-desc">Tidak terhubung</div>
+              </div>
+            </div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'was-req')">📤 Request</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'was-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'was-200')">✅ 200 OK</button>
             </div>
             <div id="was-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/auth/wa/status</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/auth/wa/status \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
+            </div>
             </div>
             <div id="was-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"status"</span>: <span class="json-str">"connected"</span>, <span class="json-comment">// connected | waiting_qr | disconnected</span>
-  <span class="json-key">"connected_at"</span>: <span class="json-str">"2026-03-08T10:00:00Z"</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"status"</span>: <span class="c-green">"connected"</span>  <span class="c-muted">// connected | waiting_qr | disconnected</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- GET /wa/qr -->
-      <div class="endpoint" id="wa-qr">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/auth/wa/qr</span>
-          <span class="endpoint-desc">Ambil QR code untuk scan WhatsApp</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="info-box">
-            <div class="auth-icon">ℹ️</div>
-            <div class="info-text">QR hanya tersedia saat status <code>waiting_qr</code>. Polling <code>GET /wa/status</code> setiap 3 detik setelah scan untuk deteksi koneksi berhasil.</div>
+        <!-- WA QR -->
+        <div class="endpoint" id="wa-qr">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/auth/wa/qr</span>
+            <span class="endpoint-desc">Ambil QR code untuk scan</span>
+            <span class="endpoint-toggle">▾</span>
           </div>
-          <div class="body-section">
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="info-box warning">
+              <span class="info-icon">⚠</span>
+              <span>Hanya tersedia saat status <code style="color:var(--gold)">waiting_qr</code>. Jika status sudah <code style="color:var(--gold)">connected</code>, endpoint ini mengembalikan error 400.</span>
+            </div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'waqr-req')">📤 Request</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'waqr-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'waqr-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'waqr-400')">❌ 400</button>
             </div>
             <div id="waqr-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/auth/wa/qr</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/auth/wa/qr \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
+            </div>
             </div>
             <div id="waqr-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"qr_base64"</span>: <span class="json-str">"data:image/png;base64,iVBORw0KGgo..."</span>
-  <span class="json-comment">// Render: &lt;img src={qr_base64} /&gt;</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"qr"</span>: <span class="c-green">"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."</span>
+  <span class="c-muted">// Render: &lt;img src={qr} /&gt;</span>
+}</pre></div>
+            </div>
             </div>
             <div id="waqr-400" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"QR tidak tersedia. Status: connected"</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">false</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"QR tidak tersedia. Status: connected"</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- POST /wa/logout -->
-      <div class="endpoint" id="wa-logout">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-POST">POST</span>
-          <span class="endpoint-path">/api/auth/wa/logout</span>
-          <span class="endpoint-desc">Disconnect WhatsApp & hapus session</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <!-- WA Logout -->
+        <div class="endpoint" id="wa-logout">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/auth/wa/logout</span>
+            <span class="endpoint-desc">Putuskan koneksi WhatsApp</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'walo-req')">📤 Request</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'walo-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'walo-200')">✅ 200 OK</button>
             </div>
             <div id="walo-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-flag">-X POST</span> <span class="curl-url">http://localhost:3000/api/auth/wa/logout</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span>
-
-<span class="json-comment">// Tidak membutuhkan request body</span></pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/auth/wa/logout \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
+            </div>
             </div>
             <div id="walo-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">true</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"WhatsApp berhasil disconnect"</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"WhatsApp berhasil disconnect"</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- POST /wa/reconnect -->
-      <div class="endpoint" id="wa-reconnect">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-POST">POST</span>
-          <span class="endpoint-path">/api/auth/wa/reconnect</span>
-          <span class="endpoint-desc">Trigger reconnect manual WhatsApp</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <!-- WA Reconnect -->
+        <div class="endpoint" id="wa-reconnect">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/auth/wa/reconnect</span>
+            <span class="endpoint-desc">Reconnect manual WhatsApp</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'ware-req')">📤 Request</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ware-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ware-200')">✅ 200 OK</button>
             </div>
             <div id="ware-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-flag">-X POST</span> <span class="curl-url">http://localhost:3000/api/auth/wa/reconnect</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span>
-
-<span class="json-comment">// Tidak membutuhkan request body</span></pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/auth/wa/reconnect \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
+            </div>
             </div>
             <div id="ware-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">true</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Reconnect dipicu. Cek status dalam beberapa detik."</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"Reconnect dipicu. Cek status dalam beberapa detik."</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- User -->
-    <div class="section" id="user">
-      <div class="section-title">User</div>
+      </section>
 
-      <!-- GET /user/profile -->
-      <div class="endpoint" id="user-profile">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/user/profile</span>
-          <span class="endpoint-desc">Profil bisnis user yang sedang login</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
+      <!-- ════════════════════════════════════════ -->
+      <!-- PENGGUNA -->
+      <!-- ════════════════════════════════════════ -->
+      <section class="section" id="user-section">
+        <div class="section-header">
+          <span class="section-number">02</span>
+          <h2 class="section-title">Pengguna</h2>
         </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+
+        <div class="endpoint" id="user-profile">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/user/profile</span>
+            <span class="endpoint-desc">Profil bisnis pengguna</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Data diambil dari Redis cache (TTL 5 menit) untuk performa optimal.</p>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'up-req')">📤 Request</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'up-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'up-200')">✅ 200 OK</button>
             </div>
             <div id="up-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/user/profile</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/user/profile \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
+            </div>
             </div>
             <div id="up-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"id"</span>: <span class="json-str">"uuid-xxx"</span>,
-  <span class="json-key">"nomor_wa"</span>: <span class="json-str">"628123456789"</span>,
-  <span class="json-key">"nama_bisnis"</span>: <span class="json-str">"Warung Bu Sari"</span>,
-  <span class="json-key">"kategori_bisnis"</span>: <span class="json-str">"Kuliner/F&B"</span>,
-  <span class="json-key">"bahan_baku"</span>: [<span class="json-str">"beras"</span>, <span class="json-str">"minyak"</span>, <span class="json-str">"telur"</span>],
-  <span class="json-key">"plan"</span>: <span class="json-str">"trial"</span>,
-  <span class="json-key">"trial_ends_at"</span>: <span class="json-str">"2026-03-22T00:00:00Z"</span>,
-  <span class="json-key">"onboarding_selesai"</span>: <span class="json-bool">true</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"628123456789"</span>,
+  <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Warung Pak Anto"</span>,
+  <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"Kuliner"</span>,
+  <span class="c-blue">"bahan_baku"</span>: [<span class="c-green">"beras"</span>, <span class="c-green">"minyak goreng"</span>],
+  <span class="c-blue">"plan"</span>: <span class="c-green">"basic"</span>,
+  <span class="c-blue">"onboarding_selesai"</span>: <span class="c-orange">true</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- GET /user/plan -->
-      <div class="endpoint" id="user-plan">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/user/plan</span>
-          <span class="endpoint-desc">Status plan & sisa kuota transaksi</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <div class="endpoint" id="user-plan">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/user/plan</span>
+            <span class="endpoint-desc">Status plan & kuota transaksi</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="plan-badges">
+              <span class="plan-badge plan-trial">trial</span>
+              <span class="plan-badge plan-basic">basic</span>
+              <span class="plan-badge plan-pro">pro</span>
+            </div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'upl-req')">📤 Request</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'upl-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'upl-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'upl-403')">❌ 403 Expired</button>
             </div>
             <div id="upl-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/user/plan</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/user/plan \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
+            </div>
             </div>
             <div id="upl-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"plan"</span>: <span class="json-str">"trial"</span>,
-  <span class="json-key">"allowed"</span>: <span class="json-bool">true</span>,
-  <span class="json-key">"sisa_hari"</span>: <span class="json-num">10</span>,
-  <span class="json-key">"transaksi_bulan_ini"</span>: <span class="json-num">12</span>,
-  <span class="json-key">"maks_transaksi"</span>: <span class="json-num">30</span>,
-  <span class="json-key">"fitur_anomali"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"fitur_insight_mingguan"</span>: <span class="json-bool">false</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"plan"</span>: <span class="c-green">"basic"</span>,
+  <span class="c-blue">"trial_ends_at"</span>: <span class="c-orange">null</span>,
+  <span class="c-blue">"kuota"</span>: {
+    <span class="c-blue">"transaksi_bulan_ini"</span>: <span class="c-orange">142</span>,
+    <span class="c-blue">"batas"</span>: <span class="c-orange">500</span>,
+    <span class="c-blue">"sisa"</span>: <span class="c-orange">358</span>
+  },
+  <span class="c-blue">"fitur"</span>: {
+    <span class="c-blue">"laporan_bulanan"</span>: <span class="c-orange">true</span>,
+    <span class="c-blue">"insight_mingguan"</span>: <span class="c-orange">true</span>,
+    <span class="c-blue">"anomali"</span>: <span class="c-orange">true</span>
+  }
+}</pre></div>
+            </div>
             </div>
             <div id="upl-403" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"plan"</span>: <span class="json-str">"trial_expired"</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Trial Anda sudah berakhir. Hubungi admin untuk upgrade."</span>
-}</pre>
-              </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">false</span>,
+  <span class="c-blue">"plan"</span>: <span class="c-green">"trial_expired"</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"Trial Anda sudah berakhir. Hubungi admin untuk upgrade."</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Transaksi -->
-    <div class="section" id="transaksi">
-      <div class="section-title">Transaksi</div>
+      </section>
 
-      <!-- GET /transaksi -->
-      <div class="endpoint" id="trx-list">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/transaksi</span>
-          <span class="endpoint-desc">List transaksi dengan filter & pagination</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
+      <!-- ════════════════════════════════════════ -->
+      <!-- TRANSAKSI -->
+      <!-- ════════════════════════════════════════ -->
+      <section class="section" id="trx-section">
+        <div class="section-header">
+          <span class="section-number">03</span>
+          <h2 class="section-title">Transaksi</h2>
         </div>
-        <div class="endpoint-body">
-          <div class="body-section">
-            <div class="body-label">Query Params</div>
-            <table class="param-table">
-              <tr><th>Param</th><th>Type</th><th>Status</th><th>Deskripsi</th></tr>
-              <tr><td class="param-name">tipe</td><td class="param-type">string</td><td><span class="param-optional">optional</span></td><td class="param-desc"><code style="font-family:monospace;font-size:11px;color:var(--accent)">pemasukan</code> atau <code style="font-family:monospace;font-size:11px;color:var(--accent)">pengeluaran</code></td></tr>
-              <tr><td class="param-name">dari</td><td class="param-type">string</td><td><span class="param-optional">optional</span></td><td class="param-desc">ISO date. Contoh: <code style="font-family:monospace;font-size:11px;color:var(--accent)">2026-03-01</code></td></tr>
-              <tr><td class="param-name">sampai</td><td class="param-type">string</td><td><span class="param-optional">optional</span></td><td class="param-desc">ISO date. Default: hari ini</td></tr>
-              <tr><td class="param-name">limit</td><td class="param-type">number</td><td><span class="param-optional">optional</span></td><td class="param-desc">Default: <code style="font-family:monospace;font-size:11px;color:var(--accent)">20</code>. Maks: <code style="font-family:monospace;font-size:11px;color:var(--accent)">100</code></td></tr>
-              <tr><td class="param-name">page</td><td class="param-type">number</td><td><span class="param-optional">optional</span></td><td class="param-desc">Default: <code style="font-family:monospace;font-size:11px;color:var(--accent)">1</code></td></tr>
+
+        <!-- List -->
+        <div class="endpoint" id="trx-list">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/transaksi</span>
+            <span class="endpoint-desc">List transaksi dengan filter</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="sub-label">Query Parameters</div>
+            <table class="field-table">
+              <thead><tr><th>Parameter</th><th>Tipe</th><th>Default</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">tipe</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc"><code style="color:var(--gold-light)">pemasukan</code> atau <code style="color:var(--gold-light)">pengeluaran</code></td></tr>
+                <tr><td class="field-name">dari</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Tanggal mulai. Format: <code style="color:var(--gold-light)">YYYY-MM-DD</code></td></tr>
+                <tr><td class="field-name">sampai</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Tanggal akhir. Format: <code style="color:var(--gold-light)">YYYY-MM-DD</code></td></tr>
+                <tr><td class="field-name">limit</td><td class="field-type">number</td><td class="field-desc">20</td><td class="field-desc">Maks per halaman (max 100)</td></tr>
+                <tr><td class="field-name">page</td><td class="field-type">number</td><td class="field-desc">1</td><td class="field-desc">Halaman</td></tr>
+              </tbody>
             </table>
-          </div>
-          <div class="body-section">
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'tl-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'tl-200')">✅ 200 OK</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep1-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep1-200')">✅ 200 OK</button>
             </div>
-            <div id="tl-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">"http://localhost:3000/api/transaksi?tipe=pengeluaran&dari=2026-03-01&limit=20&page=1"</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div id="ep1-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> "https://kalaproject-prod.up.railway.app/api/transaksi?tipe=pemasukan&dari=2026-03-01&limit=10" \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
             </div>
-            <div id="tl-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"data"</span>: [
+            </div>
+            <div id="ep1-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"data"</span>: [
     {
-      <span class="json-key">"id"</span>: <span class="json-str">"uuid-xxx"</span>,
-      <span class="json-key">"total"</span>: <span class="json-num">43000</span>,
-      <span class="json-key">"tipe"</span>: <span class="json-str">"pengeluaran"</span>,
-      <span class="json-key">"sumber_input"</span>: <span class="json-str">"foto"</span>,
-      <span class="json-key">"deskripsi"</span>: <span class="json-str">"ruanguang coffee..."</span>,
-      <span class="json-key">"transaksi_at"</span>: <span class="json-str">"2026-03-07T19:48:00Z"</span>
+      <span class="c-blue">"id"</span>: <span class="c-green">"uuid-..."</span>,
+      <span class="c-blue">"tipe"</span>: <span class="c-green">"pemasukan"</span>,
+      <span class="c-blue">"total"</span>: <span class="c-orange">150000</span>,
+      <span class="c-blue">"kategori"</span>: <span class="c-green">"Penjualan"</span>,
+      <span class="c-blue">"sumber_input"</span>: <span class="c-green">"text"</span>,
+      <span class="c-blue">"transaksi_at"</span>: <span class="c-green">"2026-03-08T10:30:00Z"</span>
     }
   ],
-  <span class="json-key">"meta"</span>: {
-    <span class="json-key">"total"</span>: <span class="json-num">48</span>,
-    <span class="json-key">"page"</span>: <span class="json-num">1</span>,
-    <span class="json-key">"limit"</span>: <span class="json-num">20</span>,
-    <span class="json-key">"total_pages"</span>: <span class="json-num">3</span>
+  <span class="c-blue">"pagination"</span>: {
+    <span class="c-blue">"page"</span>: <span class="c-orange">1</span>,
+    <span class="c-blue">"limit"</span>: <span class="c-orange">10</span>,
+    <span class="c-blue">"total"</span>: <span class="c-orange">142</span>
   }
-}</pre>
-              </div>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- GET /transaksi/:id -->
-      <div class="endpoint" id="trx-detail">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/transaksi/<span>:id</span></span>
-          <span class="endpoint-desc">Detail transaksi + items + penyesuaian</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <!-- Detail -->
+        <div class="endpoint" id="trx-detail">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/transaksi/:id</span>
+            <span class="endpoint-desc">Detail + items + penyesuaian</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'td-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'td-200')">✅ 200 OK</button>
-              <button class="tab-btn" onclick="switchTab(this,'td-404')">❌ 404</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep2-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep2-200')">✅ 200 OK</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep2-404')">❌ 404</button>
             </div>
-            <div id="td-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/transaksi/uuid-xxx</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div id="ep2-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/transaksi/uuid-abc-123 \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
             </div>
-            <div id="td-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"id"</span>: <span class="json-str">"uuid-xxx"</span>,
-  <span class="json-key">"total"</span>: <span class="json-num">43000</span>,
-  <span class="json-key">"tipe"</span>: <span class="json-str">"pengeluaran"</span>,
-  <span class="json-key">"sumber_input"</span>: <span class="json-str">"foto"</span>,
-  <span class="json-key">"deskripsi"</span>: <span class="json-str">"ruanguang coffee"</span>,
-  <span class="json-key">"transaksi_at"</span>: <span class="json-str">"2026-03-07T19:48:00Z"</span>,
-  <span class="json-key">"items"</span>: [
-    {
-      <span class="json-key">"nama_item"</span>: <span class="json-str">"Es Kopi Aren"</span>,
-      <span class="json-key">"kuantitas"</span>: <span class="json-num">1</span>,
-      <span class="json-key">"harga_satuan"</span>: <span class="json-num">16000</span>,
-      <span class="json-key">"satuan"</span>: <span class="json-str">"pcs"</span>,
-      <span class="json-key">"subtotal"</span>: <span class="json-num">16000</span>
-    }
+            </div>
+            <div id="ep2-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"id"</span>: <span class="c-green">"uuid-abc-123"</span>,
+  <span class="c-blue">"tipe"</span>: <span class="c-green">"pengeluaran"</span>,
+  <span class="c-blue">"total"</span>: <span class="c-orange">85000</span>,
+  <span class="c-blue">"deskripsi"</span>: <span class="c-green">"Beli bahan baku"</span>,
+  <span class="c-blue">"sumber_input"</span>: <span class="c-green">"image"</span>,
+  <span class="c-blue">"ai_confidence"</span>: <span class="c-orange">0.94</span>,
+  <span class="c-blue">"items"</span>: [
+    { <span class="c-blue">"nama"</span>: <span class="c-green">"Beras"</span>, <span class="c-blue">"qty"</span>: <span class="c-orange">5</span>, <span class="c-blue">"satuan"</span>: <span class="c-green">"kg"</span>, <span class="c-blue">"harga_satuan"</span>: <span class="c-orange">14000</span>, <span class="c-blue">"subtotal"</span>: <span class="c-orange">70000</span> }
   ],
-  <span class="json-key">"penyesuaian"</span>: [
-    {
-      <span class="json-key">"nama"</span>: <span class="json-str">"Diskon Member"</span>,
-      <span class="json-key">"nilai"</span>: <span class="json-num">2000</span>,
-      <span class="json-key">"tipe"</span>: <span class="json-str">"potongan"</span>
-    }
+  <span class="c-blue">"penyesuaian"</span>: [
+    { <span class="c-blue">"nama"</span>: <span class="c-green">"Diskon member"</span>, <span class="c-blue">"tipe"</span>: <span class="c-green">"potongan"</span>, <span class="c-blue">"nilai"</span>: <span class="c-orange">5000</span> }
   ]
-}</pre>
-              </div>
+}</pre></div>
             </div>
-            <div id="td-404" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Transaksi tidak ditemukan"</span>
-}</pre>
-              </div>
+            </div>
+            <div id="ep2-404" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">false</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"Transaksi tidak ditemukan"</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- POST /transaksi -->
-      <div class="endpoint" id="trx-create">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-POST">POST</span>
-          <span class="endpoint-path">/api/transaksi</span>
-          <span class="endpoint-desc">Input transaksi manual via dashboard</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
-            <div class="body-label">Request Body</div>
-            <table class="param-table">
-              <tr><th>Field</th><th>Type</th><th>Status</th><th>Deskripsi</th></tr>
-              <tr><td class="param-name">total</td><td class="param-type">number</td><td><span class="param-required">required</span></td><td class="param-desc">Nominal transaksi dalam Rupiah</td></tr>
-              <tr><td class="param-name">tipe</td><td class="param-type">string</td><td><span class="param-required">required</span></td><td class="param-desc"><code style="font-family:monospace;font-size:11px;color:var(--accent)">pemasukan</code> atau <code style="font-family:monospace;font-size:11px;color:var(--accent)">pengeluaran</code></td></tr>
-              <tr><td class="param-name">deskripsi</td><td class="param-type">string</td><td><span class="param-optional">optional</span></td><td class="param-desc">Keterangan transaksi</td></tr>
-              <tr><td class="param-name">transaksi_at</td><td class="param-type">string</td><td><span class="param-optional">optional</span></td><td class="param-desc">ISO datetime. Default: sekarang</td></tr>
-              <tr><td class="param-name">items</td><td class="param-type">array</td><td><span class="param-optional">optional</span></td><td class="param-desc">Array detail item (lihat struktur di bawah)</td></tr>
-              <tr><td class="param-name">penyesuaian</td><td class="param-type">array</td><td><span class="param-optional">optional</span></td><td class="param-desc">Diskon / pajak / biaya tambahan</td></tr>
-            </table>
+        <!-- Create -->
+        <div class="endpoint" id="trx-create">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/transaksi</span>
+            <span class="endpoint-desc">Input transaksi manual</span>
+            <span class="endpoint-toggle">▾</span>
           </div>
-          <div class="body-section">
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="sub-label">Request Body</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">tipe</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold-light)">pemasukan</code> atau <code style="color:var(--gold-light)">pengeluaran</code></td></tr>
+                <tr><td class="field-name">total</td><td class="field-type">number</td><td><span class="field-required">required</span></td><td class="field-desc">Total nominal transaksi</td></tr>
+                <tr><td class="field-name">deskripsi</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Catatan transaksi</td></tr>
+                <tr><td class="field-name">items</td><td class="field-type">array</td><td><span class="field-optional">optional</span></td><td class="field-desc">Detail item transaksi</td></tr>
+                <tr><td class="field-name">penyesuaian</td><td class="field-type">array</td><td><span class="field-optional">optional</span></td><td class="field-desc">Diskon atau biaya tambahan</td></tr>
+              </tbody>
+            </table>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'tc-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'tc-req-full')">📤 Request (lengkap)</button>
-              <button class="tab-btn" onclick="switchTab(this,'tc-201')">✅ 201 Created</button>
-              <button class="tab-btn" onclick="switchTab(this,'tc-400')">❌ 400</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep3-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep3-200')">✅ 200 OK</button>
             </div>
-            <div id="tc-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL — minimal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-flag">-X POST</span> <span class="curl-url">http://localhost:3000/api/transaksi</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Content-Type: application/json"</span> \
-  <span class="curl-flag">-d</span> <span class="curl-str">'{
-    "total": 50000,
+            <div id="ep3-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/transaksi \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
+  -H <span class="c-green">"Content-Type: application/json"</span> \
+  -d <span class="c-green">'{
     "tipe": "pemasukan",
-    "deskripsi": "Jual nasi goreng 2 porsi"
-  }'</span></pre>
-              </div>
-            </div>
-            <div id="tc-req-full" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL — dengan items & penyesuaian</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-flag">-X POST</span> <span class="curl-url">http://localhost:3000/api/transaksi</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Content-Type: application/json"</span> \
-  <span class="curl-flag">-d</span> <span class="curl-str">'{
-    "total": 43000,
-    "tipe": "pengeluaran",
-    "deskripsi": "Beli bahan baku",
-    "transaksi_at": "2026-03-08T09:00:00Z",
+    "total": 150000,
+    "deskripsi": "Penjualan siang",
     "items": [
-      {
-        "nama": "Tepung Terigu",
-        "qty": 2,
-        "harga": 15000,
-        "satuan": "kg"
-      },
-      {
-        "nama": "Telur",
-        "qty": 10,
-        "harga": 2000,
-        "satuan": "butir"
-      }
+      { "nama": "Nasi goreng", "qty": 3, "satuan": "porsi", "harga_satuan": 20000 },
+      { "nama": "Es teh", "qty": 3, "satuan": "gelas", "harga_satuan": 5000 }
     ],
     "penyesuaian": [
-      {
-        "nama": "Diskon Langganan",
-        "nilai": 5000,
-        "tipe": "potongan"
-      }
+      { "nama": "Diskon pelanggan lama", "tipe": "potongan", "nilai": 15000 }
     ]
-  }'</span></pre>
-              </div>
+  }'</span></pre></div>
             </div>
-            <div id="tc-201" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">true</span>,
-  <span class="json-key">"id"</span>: <span class="json-str">"uuid-baru"</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Transaksi berhasil disimpan"</span>
-}</pre>
-              </div>
             </div>
-            <div id="tc-400" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Field 'total' dan 'tipe' wajib diisi"</span>
-}</pre>
-              </div>
+            <div id="ep3-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+  <span class="c-blue">"id"</span>: <span class="c-green">"uuid-baru-xxx"</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"Transaksi berhasil disimpan"</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- DELETE /transaksi/:id -->
-      <div class="endpoint" id="trx-delete">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-DELETE">DELETE</span>
-          <span class="endpoint-path">/api/transaksi/<span>:id</span></span>
-          <span class="endpoint-desc">Hapus transaksi beserta items & penyesuaian</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <!-- Delete -->
+        <div class="endpoint" id="trx-delete">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-delete">DELETE</span>
+            <span class="endpoint-path">/api/transaksi/:id</span>
+            <span class="endpoint-desc">Hapus transaksi</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="info-box warning">
+              <span class="info-icon">⚠</span>
+              <span>Penghapusan permanen. Semua item dan penyesuaian terkait ikut terhapus.</span>
+            </div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'del-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'del-200')">✅ 200 OK</button>
-              <button class="tab-btn" onclick="switchTab(this,'del-403')">❌ 403</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep7-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep7-200')">✅ 200 OK</button>
             </div>
-            <div id="del-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-flag">-X DELETE</span> <span class="curl-url">http://localhost:3000/api/transaksi/uuid-xxx</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span>
-
-<span class="json-comment">// Tidak membutuhkan request body</span></pre>
-              </div>
+            <div id="ep7-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> -X DELETE https://kalaproject-prod.up.railway.app/api/transaksi/uuid-abc-123 \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
             </div>
-            <div id="del-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">true</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Transaksi berhasil dihapus"</span>
-}</pre>
-              </div>
             </div>
-            <div id="del-403" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Tidak punya akses ke transaksi ini"</span>
-}</pre>
-              </div>
+            <div id="ep7-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+  <span class="c-blue">"message"</span>: <span class="c-green">"Transaksi berhasil dihapus"</span>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Laporan -->
-    <div class="section" id="laporan">
-      <div class="section-title">Laporan</div>
+      </section>
 
-      <!-- GET /laporan/harian -->
-      <div class="endpoint" id="lap-harian">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/laporan/harian</span>
-          <span class="endpoint-desc">Ringkasan & chart transaksi hari ini</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
+      <!-- ════════════════════════════════════════ -->
+      <!-- LAPORAN -->
+      <!-- ════════════════════════════════════════ -->
+      <section class="section" id="lap-section">
+        <div class="section-header">
+          <span class="section-number">04</span>
+          <h2 class="section-title">Laporan</h2>
         </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+
+        <div class="endpoint" id="lap-harian">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/laporan/harian</span>
+            <span class="endpoint-desc">Ringkasan & chart per jam</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'lh-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'lh-200')">✅ 200 OK</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep8-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep8-200')">✅ 200 OK</button>
             </div>
-            <div id="lh-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/laporan/harian</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div id="ep8-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/laporan/harian \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
             </div>
-            <div id="lh-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"periode"</span>: <span class="json-str">"harian"</span>,
-  <span class="json-key">"dari"</span>: <span class="json-str">"2026-03-08T00:00:00Z"</span>,
-  <span class="json-key">"sampai"</span>: <span class="json-str">"2026-03-08T23:59:59Z"</span>,
-  <span class="json-key">"total_pemasukan"</span>: <span class="json-num">500000</span>,
-  <span class="json-key">"total_pengeluaran"</span>: <span class="json-num">43000</span>,
-  <span class="json-key">"saldo"</span>: <span class="json-num">457000</span>,
-  <span class="json-key">"jumlah_transaksi"</span>: <span class="json-num">5</span>,
-  <span class="json-key">"chart"</span>: [
-    { <span class="json-key">"jam"</span>: <span class="json-str">"08:00"</span>, <span class="json-key">"pemasukan"</span>: <span class="json-num">100000</span>, <span class="json-key">"pengeluaran"</span>: <span class="json-num">0</span> },
-    { <span class="json-key">"jam"</span>: <span class="json-str">"12:00"</span>, <span class="json-key">"pemasukan"</span>: <span class="json-num">200000</span>, <span class="json-key">"pengeluaran"</span>: <span class="json-num">43000</span> }
+            </div>
+            <div id="ep8-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"tanggal"</span>: <span class="c-green">"2026-03-08"</span>,
+  <span class="c-blue">"ringkasan"</span>: {
+    <span class="c-blue">"total_pemasukan"</span>: <span class="c-orange">850000</span>,
+    <span class="c-blue">"total_pengeluaran"</span>: <span class="c-orange">320000</span>,
+    <span class="c-blue">"laba_bersih"</span>: <span class="c-orange">530000</span>,
+    <span class="c-blue">"jumlah_transaksi"</span>: <span class="c-orange">14</span>
+  },
+  <span class="c-blue">"chart"</span>: [
+    { <span class="c-blue">"jam"</span>: <span class="c-green">"08:00"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">120000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">0</span> },
+    { <span class="c-blue">"jam"</span>: <span class="c-green">"09:00"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">95000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">80000</span> }
   ]
-}</pre>
-              </div>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- GET /laporan/mingguan -->
-      <div class="endpoint" id="lap-mingguan">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/laporan/mingguan</span>
-          <span class="endpoint-desc">Ringkasan & chart transaksi minggu ini</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <div class="endpoint" id="lap-mingguan">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/laporan/mingguan</span>
+            <span class="endpoint-desc">Ringkasan & chart per hari</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'lm-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'lm-200')">✅ 200 OK</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep4-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep4-200')">✅ 200 OK</button>
             </div>
-            <div id="lm-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/laporan/mingguan</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div id="ep4-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/laporan/mingguan \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
             </div>
-            <div id="lm-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"periode"</span>: <span class="json-str">"mingguan"</span>,
-  <span class="json-key">"dari"</span>: <span class="json-str">"2026-03-02T00:00:00Z"</span>,
-  <span class="json-key">"sampai"</span>: <span class="json-str">"2026-03-08T23:59:59Z"</span>,
-  <span class="json-key">"total_pemasukan"</span>: <span class="json-num">1200000</span>,
-  <span class="json-key">"total_pengeluaran"</span>: <span class="json-num">850000</span>,
-  <span class="json-key">"saldo"</span>: <span class="json-num">350000</span>,
-  <span class="json-key">"jumlah_transaksi"</span>: <span class="json-num">12</span>,
-  <span class="json-key">"chart"</span>: [
-    { <span class="json-key">"hari"</span>: <span class="json-str">"Sen"</span>, <span class="json-key">"pemasukan"</span>: <span class="json-num">300000</span>, <span class="json-key">"pengeluaran"</span>: <span class="json-num">150000</span> },
-    { <span class="json-key">"hari"</span>: <span class="json-str">"Sel"</span>, <span class="json-key">"pemasukan"</span>: <span class="json-num">200000</span>, <span class="json-key">"pengeluaran"</span>: <span class="json-num">200000</span> }
+            </div>
+            <div id="ep4-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"periode"</span>: { <span class="c-blue">"dari"</span>: <span class="c-green">"2026-03-02"</span>, <span class="c-blue">"sampai"</span>: <span class="c-green">"2026-03-08"</span> },
+  <span class="c-blue">"ringkasan"</span>: {
+    <span class="c-blue">"total_pemasukan"</span>: <span class="c-orange">5200000</span>,
+    <span class="c-blue">"total_pengeluaran"</span>: <span class="c-orange">1800000</span>,
+    <span class="c-blue">"laba_bersih"</span>: <span class="c-orange">3400000</span>
+  },
+  <span class="c-blue">"chart"</span>: [
+    { <span class="c-blue">"hari"</span>: <span class="c-green">"Senin"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">720000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">240000</span> }
   ]
-}</pre>
-              </div>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- GET /laporan/bulanan -->
-      <div class="endpoint" id="lap-bulanan">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/laporan/bulanan</span>
-          <span class="endpoint-desc">Ringkasan & chart transaksi bulan ini</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
-        </div>
-        <div class="endpoint-body">
-          <div class="body-section">
+        <div class="endpoint" id="lap-bulanan">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/laporan/bulanan</span>
+            <span class="endpoint-desc">Ringkasan + gross margin</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="plan-badges">
+              <span class="plan-badge plan-basic">basic</span>
+              <span class="plan-badge plan-pro">pro</span>
+            </div>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'lb-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'lb-200')">✅ 200 OK</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep5-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep5-200')">✅ 200 OK</button>
             </div>
-            <div id="lb-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/laporan/bulanan</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div id="ep5-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/laporan/bulanan \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
             </div>
-            <div id="lb-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"periode"</span>: <span class="json-str">"bulanan"</span>,
-  <span class="json-key">"dari"</span>: <span class="json-str">"2026-03-01T00:00:00Z"</span>,
-  <span class="json-key">"sampai"</span>: <span class="json-str">"2026-03-31T23:59:59Z"</span>,
-  <span class="json-key">"total_pemasukan"</span>: <span class="json-num">8500000</span>,
-  <span class="json-key">"total_pengeluaran"</span>: <span class="json-num">4200000</span>,
-  <span class="json-key">"saldo"</span>: <span class="json-num">4300000</span>,
-  <span class="json-key">"gross_margin"</span>: <span class="json-str">"50.6%"</span>,
-  <span class="json-key">"jumlah_transaksi"</span>: <span class="json-num">48</span>,
-  <span class="json-key">"chart"</span>: [
-    { <span class="json-key">"tanggal"</span>: <span class="json-str">"01"</span>, <span class="json-key">"pemasukan"</span>: <span class="json-num">300000</span>, <span class="json-key">"pengeluaran"</span>: <span class="json-num">150000</span> },
-    { <span class="json-key">"tanggal"</span>: <span class="json-str">"02"</span>, <span class="json-key">"pemasukan"</span>: <span class="json-num">200000</span>, <span class="json-key">"pengeluaran"</span>: <span class="json-num">80000</span> }
+            </div>
+            <div id="ep5-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"bulan"</span>: <span class="c-green">"2026-03"</span>,
+  <span class="c-blue">"ringkasan"</span>: {
+    <span class="c-blue">"total_pemasukan"</span>: <span class="c-orange">22500000</span>,
+    <span class="c-blue">"total_pengeluaran"</span>: <span class="c-orange">8400000</span>,
+    <span class="c-blue">"laba_bersih"</span>: <span class="c-orange">14100000</span>,
+    <span class="c-blue">"gross_margin"</span>: <span class="c-orange">62.67</span>
+  },
+  <span class="c-blue">"chart"</span>: [
+    { <span class="c-blue">"tanggal"</span>: <span class="c-green">"2026-03-01"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">750000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">280000</span> }
   ]
-}</pre>
-              </div>
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Anomali -->
-    <div class="section" id="anomali">
-      <div class="section-title">Anomali & Insight</div>
+      </section>
 
-      <div class="endpoint" id="anomali-insight">
-        <div class="endpoint-header" onclick="toggle(this)">
-          <span class="method-badge method-GET">GET</span>
-          <span class="endpoint-path">/api/anomali/insight</span>
-          <span class="endpoint-desc">Insight keuangan 7 hari terakhir</span>
-          <span class="auth-required">🔑 JWT</span>
-          <span class="endpoint-chevron">▼</span>
+      <!-- ════════════════════════════════════════ -->
+      <!-- INSIGHT -->
+      <!-- ════════════════════════════════════════ -->
+      <section class="section" id="anomali-section">
+        <div class="section-header">
+          <span class="section-number">05</span>
+          <h2 class="section-title">Anomali & Insight</h2>
         </div>
-        <div class="endpoint-body">
-          <div class="auth-box">
-            <div class="auth-icon">⚠️</div>
-            <div class="auth-text">Hanya tersedia untuk plan <code>basic</code> dan <code>pro</code>. Plan <code>trial</code> akan mendapat response 403.</div>
+
+        <div class="endpoint" id="anomali">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/anomali/insight</span>
+            <span class="endpoint-desc">Insight 7 hari terakhir</span>
+            <span class="endpoint-toggle">▾</span>
           </div>
-          <div class="body-section">
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="plan-badges">
+              <span class="plan-badge plan-basic">basic</span>
+              <span class="plan-badge plan-pro">pro</span>
+            </div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin:0.75rem 0;">Insight otomatis dari Nata AI berdasarkan pola transaksi 7 hari terakhir.</p>
             <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab(this,'ai-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'ai-200')">✅ 200 OK</button>
-              <button class="tab-btn" onclick="switchTab(this,'ai-403')">❌ 403</button>
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep6-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep6-200')">✅ 200 OK</button>
             </div>
-            <div id="ai-req" class="tab-panel active">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">CURL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre><span class="curl-flag">curl</span> <span class="curl-url">http://localhost:3000/api/anomali/insight</span> \
-  <span class="curl-flag">-H</span> <span class="curl-str">"Authorization: Bearer &lt;token&gt;"</span></pre>
-              </div>
+            <div id="ep6-req" class="tab-panel active">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div>
+              <div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/anomali/insight \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div>
             </div>
-            <div id="ai-200" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
-                <pre>{
-  <span class="json-key">"total_pemasukan"</span>: <span class="json-num">1200000</span>,
-  <span class="json-key">"total_pengeluaran"</span>: <span class="json-num">850000</span>,
-  <span class="json-key">"laba_kotor"</span>: <span class="json-num">350000</span>,
-  <span class="json-key">"gross_margin"</span>: <span class="json-str">"29.2%"</span>,
-  <span class="json-key">"jumlah_transaksi"</span>: <span class="json-num">12</span>,
-  <span class="json-key">"periode"</span>: <span class="json-str">"2026-03-01 — 2026-03-08"</span>
-}</pre>
-              </div>
             </div>
-            <div id="ai-403" class="tab-panel">
-              <div class="code-block">
-                <div class="code-header"><span class="code-lang">JSON</span></div>
-                <pre>{
-  <span class="json-key">"success"</span>: <span class="json-bool">false</span>,
-  <span class="json-key">"message"</span>: <span class="json-str">"Fitur ini hanya tersedia untuk plan Basic/Pro"</span>
-}</pre>
-              </div>
+            <div id="ep6-200" class="tab-panel">
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">json</span></div>
+              <div class="code-content"><pre>{
+  <span class="c-blue">"periode"</span>: { <span class="c-blue">"dari"</span>: <span class="c-green">"2026-03-01"</span>, <span class="c-blue">"sampai"</span>: <span class="c-green">"2026-03-08"</span> },
+  <span class="c-blue">"anomali"</span>: [
+    {
+      <span class="c-blue">"tipe"</span>: <span class="c-green">"pengeluaran_tinggi"</span>,
+      <span class="c-blue">"pesan"</span>: <span class="c-green">"Pengeluaran Rabu 40% lebih tinggi dari rata-rata"</span>,
+      <span class="c-blue">"tanggal"</span>: <span class="c-green">"2026-03-05"</span>,
+      <span class="c-blue">"nilai"</span>: <span class="c-orange">420000</span>
+    }
+  ],
+  <span class="c-blue">"insight"</span>: [
+    <span class="c-green">"Pemasukan tertinggi di hari Jumat — pertimbangkan tambah stok bahan baku"</span>,
+    <span class="c-green">"Margin keuntungan minggu ini naik 8% dibanding minggu lalu"</span>
+  ]
+}</pre></div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
+      </section>
+
+    </div><!-- /content -->
   </main>
 </div>
 
 <script>
-  function toggle(header) {
-    header.parentElement.classList.toggle('open');
-  }
-
   function switchTab(btn, panelId) {
-    const body = btn.closest('.endpoint-body') || btn.closest('.body-section');
-    const container = btn.closest('.body-section') || btn.closest('.endpoint-body');
+    const tabGroup = btn.closest('.tabs');
+    tabGroup.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active-req', 'active-200', 'active-4xx');
+    });
 
-    // Deactivate all tabs in this group
-    btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    // Set active class based on panel type
+    if (panelId.includes('-req')) btn.classList.add('active-req');
+    else if (panelId.includes('-200')) btn.classList.add('active-200');
+    else btn.classList.add('active-4xx');
 
-    // Hide all panels in the same scope
-    const allPanels = container.querySelectorAll('.tab-panel');
-    allPanels.forEach(p => p.classList.remove('active'));
+    // Hide all sibling panels
+    const endpointBody = btn.closest('.endpoint-body');
+    endpointBody.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 
-    // Show target
     const target = document.getElementById(panelId);
     if (target) target.classList.add('active');
   }
 
+  function toggleEndpoint(header) {
+    const endpoint = header.parentElement;
+    endpoint.classList.toggle('open');
+  }
+
   function copyCode(btn) {
     const pre = btn.closest('.code-block').querySelector('pre');
-    navigator.clipboard.writeText(pre.innerText).then(() => {
-      btn.textContent = 'copied!';
-      btn.style.color = 'var(--accent)';
-      setTimeout(() => { btn.textContent = 'copy'; btn.style.color = ''; }, 1500);
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Tersalin!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Salin';
+        btn.classList.remove('copied');
+      }, 2000);
     });
   }
 
-  // Highlight active nav on scroll
+  // Active nav highlight on scroll
+  const sections = document.querySelectorAll('.endpoint');
   const navItems = document.querySelectorAll('.nav-item');
+
   window.addEventListener('scroll', () => {
     let current = '';
-    document.querySelectorAll('[id]').forEach(s => {
-      if (window.scrollY >= s.offsetTop - 120) current = s.id;
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.id;
     });
-    navItems.forEach(n => {
-      n.classList.remove('active');
-      if (n.getAttribute('href') === '#' + current) n.classList.add('active');
-    });
-  });
-
-  navItems.forEach(item => {
-    item.addEventListener('click', e => {
-      e.preventDefault();
-      const target = document.querySelector(item.getAttribute('href'));
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    navItems.forEach(item => {
+      item.classList.remove('active');
+      if (item.getAttribute('href') === '#' + current) {
+        item.classList.add('active');
+      }
     });
   });
 </script>
