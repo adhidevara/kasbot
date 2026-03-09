@@ -1,5 +1,4 @@
 // src/config/db.js
-
 // ─── Database Abstraction Layer ───────────────────────────────────────────────
 // DB_DRIVER=supabase (default) | DB_DRIVER=mysql
 //
@@ -115,6 +114,8 @@ function MySQLQueryBuilder(table) {
 
             if (s.action === 'upsert') {
                 for (const row of s.data) {
+                    // Hanya generate UUID jika tabel pakai 'id' sebagai PK
+                    // (skip jika tabel pakai PK lain seperti nomor_wa)
                     const hasDifferentPK = s.conflictCol && s.conflictCol !== 'id';
                     if (!row.id && !hasDifferentPK) {
                         const [[{ uuid }]] = await pool.query('SELECT UUID() as uuid');
@@ -197,33 +198,36 @@ async function getSupabase() {
     return _supabase;
 }
 
-// Proxy: setiap method call diforward ke supabase builder yang di-await
+// Proxy: forward semua method calls ke Supabase builder secara lazy
 function SupabaseQueryBuilder(table) {
-    let _chain = null;
+    // builderPromise selalu menyimpan builder/hasil terbaru
+    let builderPromise = getSupabase().then(client => client.from(table));
 
-    async function getChain() {
-        if (_chain) return _chain;
-        const client = await getSupabase();
-        _chain = client.from(table);
-        return _chain;
-    }
+    const METHODS = ['select','insert','upsert','update','delete',
+                     'eq','neq','gte','lte','gt','lt','in',
+                     'order','limit','single','range','ilike','like',
+                     'is','contains','containedBy','overlaps','not','or','filter'];
 
-    // Proxy sederhana — setiap method return thenable
-    function makeProxy(promiseChain) {
-        const METHODS = ['select','insert','upsert','update','delete',
-                         'eq','neq','gte','lte','gt','lt','in',
-                         'order','limit','single'];
-        const p = {
-            then: (res, rej) => promiseChain.then(res, rej),
-            catch: (rej)     => promiseChain.catch(rej),
-        };
-        for (const m of METHODS) {
-            p[m] = (...args) => makeProxy(promiseChain.then(c => c[m](...args)));
+    const proxy = new Proxy({}, {
+        get(_, prop) {
+            if (prop === 'then')  return (res, rej) => builderPromise.then(res, rej);
+            if (prop === 'catch') return (rej)       => builderPromise.catch(rej);
+            if (METHODS.includes(prop)) {
+                return (...args) => {
+                    builderPromise = builderPromise.then(b => {
+                        if (typeof b[prop] !== 'function') {
+                            throw new TypeError(`Supabase builder: method "${prop}" tidak tersedia`);
+                        }
+                        return b[prop](...args);
+                    });
+                    return proxy; // tetap return proxy untuk chaining
+                };
+            }
+            return undefined;
         }
-        return p;
-    }
+    });
 
-    return makeProxy(getChain());
+    return proxy;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
