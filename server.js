@@ -1,10 +1,11 @@
 // server.js
-import logger from './src/shared/logger.js';
 import 'dotenv/config';
+import logger from './src/shared/logger.js';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+
 import './src/shared/redis.js';
 import { startWA } from './src/modules/whatsapp/whatsapp.service.js';
 import { startScheduler } from './src/shared/scheduler.js';
@@ -17,30 +18,56 @@ import './src/modules/report/report.listener.js';
 import './src/shared/errorHandler.js';
 import './src/shared/queue.worker.js';
 
+// API Routes
+import { authRoutes }      from './src/api/routes/auth.routes.js';
+import { waRoutes }        from './src/api/routes/wa.routes.js';
+import { userRoutes }      from './src/api/routes/user.routes.js';
+import { transaksiRoutes } from './src/api/routes/transaksi.routes.js';
+import { laporanRoutes }   from './src/api/routes/laporan.routes.js';
+import { anomaliRoutes }   from './src/api/routes/anomali.routes.js';
+import { statsRoutes }     from './src/api/routes/stats.routes.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const fastify = Fastify({ logger: false, disableRequestLogging: true });
 
+// Static files
 await fastify.register(fastifyStatic, {
     root: join(__dirname, 'public'),
     prefix: '/',
 });
 
-fastify.get('/', (req, reply) => {
-    reply.redirect('/api-doc.html');
+// Redirect root → docs
+fastify.get('/', (req, reply) => reply.redirect('/api-doc.html'));
+
+// Register API routes
+await fastify.register(authRoutes,      { prefix: '/api/auth' });
+await fastify.register(waRoutes,        { prefix: '/api/wa' });
+await fastify.register(userRoutes,      { prefix: '/api/users' });
+await fastify.register(transaksiRoutes, { prefix: '/api/transaksi' });
+await fastify.register(laporanRoutes,   { prefix: '/api/laporan' });
+await fastify.register(anomaliRoutes,   { prefix: '/api/anomali' });
+await fastify.register(statsRoutes,     { prefix: '/api/stats' });
+
+// Global 404
+fastify.setNotFoundHandler((request, reply) => {
+    reply.code(404).send({ success: false, message: `Route ${request.method} ${request.url} tidak ditemukan` });
+});
+
+// Global error handler
+fastify.setErrorHandler((error, request, reply) => {
+    logger.error('API Error:', error.message);
+    reply.code(error.statusCode || 500).send({ success: false, message: error.message });
 });
 
 const start = async () => {
     try {
-        await fastify.listen({ port: 3000, host: '0.0.0.0' });
-        logger.info('🚀 Server Aktif di http://localhost:3000');
-        logger.info('📄 API Docs: http://localhost:3000/api-doc.html');
-
-        const driver = process.env.DB_DRIVER || 'supabase';
-        logger.info(`🗄️  Database: ${driver.toUpperCase()}`);
+        await fastify.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' });
+        logger.info(`🚀 Server Aktif di http://localhost:${process.env.PORT || 3000}`);
+        logger.info(`📄 API Docs: http://localhost:${process.env.PORT || 3000}/api-doc.html`);
+        logger.info(`🗄️  Database: ${(process.env.DB_DRIVER || 'supabase').toUpperCase()}`);
 
         startScheduler();
-
         logger.info('--- Mencoba Koneksi WhatsApp ---');
         await startWA();
     } catch (err) {

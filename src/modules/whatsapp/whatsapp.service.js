@@ -1,45 +1,87 @@
 // src/modules/whatsapp/whatsapp.service.js
-import logger from '../../shared/logger.js';
+import 'dotenv/config';
 import makeWASocket, {
     useMultiFileAuthState,
     DisconnectReason,
+    fetchLatestBaileysVersion,
     downloadMediaMessage
 } from '@whiskeysockets/baileys';
 import qrcode from 'qrcode-terminal';
-import bus from '../../shared/eventBus.js';
 import pino from 'pino';
+import logger from '../../shared/logger.js';
+import bus from '../../shared/eventBus.js';
 import { messageQueue } from '../../shared/queue.js';
 
-// ⚠️ mediaQueue TIDAK dipakai — buffer biner tidak bisa disimpan di Redis
+// ⚠️ Buffer biner (gambar/audio) tidak bisa disimpan di Redis → bypass queue, langsung emit
 
 let sockInstance = null;
+let waStatus = 'disconnected'; // 'connected' | 'disconnected' | 'waiting_qr'
+let currentQR = null;
+
+// ─── Public API ────────────────────────────────────────────────────────────────
+
+export function getWAStatus() {
+    return waStatus;
+}
+
+export function getCurrentQR() {
+    return currentQR;
+}
+
+export async function sendWAMessage(to, text) {
+    if (!sockInstance) throw new Error('WhatsApp belum terkoneksi');
+    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
+    await sockInstance.sendMessage(jid, { text });
+}
+
+export async function disconnectWA() {
+    if (sockInstance) {
+        await sockInstance.logout();
+        sockInstance = null;
+        waStatus = 'disconnected';
+        currentQR = null;
+        logger.info('WhatsApp disconnected via API');
+    }
+}
+
+export async function reconnectWA() {
+    if (sockInstance) {
+        try { await sockInstance.end(); } catch (_) {}
+        sockInstance = null;
+    }
+    waStatus = 'disconnected';
+    currentQR = null;
+    await startWA();
+}
+
+// ─── Event Bus: kirim pesan keluar ────────────────────────────────────────────
 
 bus.on('whatsapp.send_message', async ({ to, text }) => {
-    if (!sockInstance) {
-        logger.error("Gagal kirim: socket belum siap.");
-        return;
-    }
     try {
-        logger.info(`📤 Mengirim balasan ke ${to}...`);
-        await sockInstance.sendMessage(to, { text });
+        await sendWAMessage(to, text);
+        logger.info(`📤 Pesan terkirim ke ${to}`);
     } catch (err) {
-        logger.error("Gagal mengirim pesan WhatsApp:", err.message);
+        logger.error('Gagal mengirim pesan WhatsApp:', err.message);
     }
 });
+
+// ─── Core ──────────────────────────────────────────────────────────────────────
 
 export async function startWA() {
     try {
         const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+        const { version } = await fetchLatestBaileysVersion();
 
         const sock = makeWASocket({
+            version,
             auth: state,
             logger: pino({ level: 'silent' }),
-            browser: ["Windows", "Chrome", "122.0.0.0"],
+            browser: ['Windows', 'Chrome', '122.0.0.0'],
             printQRInTerminal: false,
-            getMessage: async (key) => { return { conversation: 'getting messages' } },
+            getMessage: async () => ({ conversation: 'getting messages' }),
             syncFullHistory: false,
             markOnlineOnConnect: true,
-            connectTimeoutMs: 60000,
+            connectTimeoutMs: 60_000,
             defaultQueryTimeoutMs: 0,
         });
 
@@ -47,129 +89,134 @@ export async function startWA() {
 
         sock.ev.on('creds.update', saveCreds);
 
+        // ─── Koneksi ───────────────────────────────────────────────────────────
         sock.ev.on('connection.update', (update) => {
             const { connection, lastDisconnect, qr } = update;
+
             if (qr) {
+                waStatus = 'waiting_qr';
+                currentQR = qr;
                 logger.info('--- SCAN QR SEKARANG ---');
                 qrcode.generate(qr, { small: true });
             }
+
             if (connection === 'close') {
                 sockInstance = null;
+                waStatus = 'disconnected';
+                currentQR = null;
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
                 const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
                 logger.warn(`Terputus: ${statusCode}. Reconnect: ${shouldReconnect}`);
-                if (shouldReconnect) setTimeout(() => startWA(), 5000);
+                if (shouldReconnect) setTimeout(() => startWA(), 5_000);
             } else if (connection === 'open') {
+                waStatus = 'connected';
+                currentQR = null;
                 logger.info('✅ KASBOT TERHUBUNG KE WHATSAPP');
             }
         });
 
+        // ─── Pesan Masuk ───────────────────────────────────────────────────────
         sock.ev.on('messages.upsert', async ({ messages, type: upsertType }) => {
-            const msg = messages[0];
+            // Hanya proses notifikasi baru (bukan history sync)
+            if (upsertType !== 'notify') return;
 
-            if (!msg.message || msg.message.protocolMessage) return;
-            if (msg.key.fromMe) return;
+            for (const msg of messages) {
+                if (!msg.message || msg.message.protocolMessage) continue;
+                if (msg.key.fromMe) continue;
 
-            // Skip pesan history saat sync awal setelah reconnect
-            if (upsertType === 'prepend') return;
+                const sender = msg.key.remoteJid;
+                if (!sender) continue;
+                if (sender.endsWith('@newsletter')) continue;
+                if (sender.endsWith('@g.us')) continue;
 
-            // Skip pesan lebih dari 30 detik yang lalu
-            const msgTime = (msg.messageTimestamp || 0) * 1000;
-            if (Date.now() - msgTime > 30_000) {
-                logger.verbose(`⏭️ Skip pesan lama: ${new Date(msgTime).toISOString()}`);
-                return;
-            }
+                // Skip pesan lebih dari 30 detik yang lalu
+                const msgTime = (msg.messageTimestamp || 0) * 1000;
+                if (Date.now() - msgTime > 30_000) {
+                    logger.verbose(`⏭️ Skip pesan lama: ${new Date(msgTime).toISOString()}`);
+                    continue;
+                }
 
-            logger.verbose('📩 Event masuk: ' + JSON.stringify(msg.key));
+                const type = Object.keys(msg.message)[0];
+                logger.verbose(`📋 [${sender}] tipe: ${type}`);
 
-            const sender = msg.key.remoteJid;
-            const senderAlt = msg.key.remoteJidAlt || null;
+                // ─── TIPE 1: Teks → masuk Redis queue ─────────────────────────
+                if (type === 'conversation' || type === 'extendedTextMessage') {
+                    const text = msg.message.conversation
+                        || msg.message.extendedTextMessage?.text
+                        || '';
+                    if (!text) continue;
 
-            if (sender.endsWith('@newsletter')) return;
-            if (sender.endsWith('@g.us')) return;
+                    logger.verbose(`🔍 Teks: [${sender}] -> ${text}`);
 
-            const type = Object.keys(msg.message)[0];
-            logger.verbose(`📋 Tipe pesan: ${type}`);
-
-            // ─── TIPE 1: Teks ─────────────────────────────
-            if (type === 'conversation' || type === 'extendedTextMessage') {
-                const text = msg.message.conversation
-                    || msg.message.extendedTextMessage?.text
-                    || '';
-                if (!text) return;
-
-                logger.verbose(`🔍 Teks: [${sender}] -> ${text}`);
-
-                await messageQueue.add('text-message', {
-                    type: 'text',
-                    payload: { sender, senderAlt, text, source_type: 'teks' }
-                });
-                return;
-            }
-
-            // ─── TIPE 2: Gambar → langsung emit (buffer tidak bisa di Redis) ──
-            if (type === 'imageMessage') {
-                const caption = msg.message.imageMessage?.caption || '';
-                logger.verbose(`🖼️ Gambar dari [${sender}]`);
-
-                bus.emit('whatsapp.send_message', {
-                    to: sender,
-                    text: '🔍 Sedang membaca struk Anda...'
-                });
-
-                try {
-                    const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
-                        logger: pino({ level: 'silent' }),
-                        reuploadRequest: sock.updateMediaMessage
+                    await messageQueue.add('text-message', {
+                        type: 'text',
+                        payload: { sender, text, source_type: 'teks' }
                     });
+                    continue;
+                }
 
-                    // Langsung emit — bypass queue
-                    bus.emit('whatsapp.image_received', {
-                        sender, senderAlt, imageBuffer: buffer, caption, source_type: 'foto'
-                    });
-                } catch (err) {
-                    logger.error('Gagal download gambar:', err.message);
+                // ─── TIPE 2: Gambar → download langsung, emit buffer ───────────
+                if (type === 'imageMessage') {
+                    const caption = msg.message.imageMessage?.caption || '';
+                    logger.verbose(`🖼️ Gambar dari [${sender}]`);
+
                     bus.emit('whatsapp.send_message', {
                         to: sender,
-                        text: '❌ Gagal membaca gambar. Coba kirim ulang foto struk Anda.'
+                        text: '🔍 Sedang membaca struk Anda...'
                     });
+
+                    try {
+                        const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
+                            logger: pino({ level: 'silent' }),
+                            reuploadRequest: sock.updateMediaMessage
+                        });
+
+                        bus.emit('whatsapp.image_received', {
+                            sender, imageBuffer: buffer, caption, source_type: 'foto'
+                        });
+                    } catch (err) {
+                        logger.error('Gagal download gambar:', err.message);
+                        bus.emit('whatsapp.send_message', {
+                            to: sender,
+                            text: '❌ Gagal membaca gambar. Coba kirim ulang foto struk Anda.'
+                        });
+                    }
+                    continue;
                 }
-                return;
-            }
 
-            // ─── TIPE 3: Voice Note → langsung emit (buffer tidak bisa di Redis)
-            if (type === 'audioMessage') {
-                const isPtt = msg.message.audioMessage?.ptt;
-                if (!isPtt) return;
+                // ─── TIPE 3: Voice Note → download langsung, emit buffer ───────
+                if (type === 'audioMessage') {
+                    const isPtt = msg.message.audioMessage?.ptt;
+                    if (!isPtt) continue;
 
-                logger.verbose(`🎙️ Voice note dari [${sender}]`);
+                    logger.verbose(`🎙️ Voice note dari [${sender}]`);
 
-                bus.emit('whatsapp.send_message', {
-                    to: sender,
-                    text: '🎙️ Sedang mendengarkan voice note Anda...'
-                });
-
-                try {
-                    const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
-                        logger: pino({ level: 'silent' }),
-                        reuploadRequest: sock.updateMediaMessage
-                    });
-
-                    // Langsung emit — bypass queue
-                    bus.emit('whatsapp.audio_received', {
-                        sender, senderAlt, audioBuffer: buffer, source_type: 'suara'
-                    });
-                } catch (err) {
-                    logger.error('Gagal download audio:', err.message);
                     bus.emit('whatsapp.send_message', {
                         to: sender,
-                        text: '❌ Gagal memproses voice note. Coba kirim ulang.'
+                        text: '🎙️ Sedang mendengarkan voice note Anda...'
                     });
-                }
-                return;
-            }
 
-            logger.verbose(`⚠️ Tipe pesan tidak didukung: ${type}`);
+                    try {
+                        const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
+                            logger: pino({ level: 'silent' }),
+                            reuploadRequest: sock.updateMediaMessage
+                        });
+
+                        bus.emit('whatsapp.audio_received', {
+                            sender, audioBuffer: buffer, source_type: 'suara'
+                        });
+                    } catch (err) {
+                        logger.error('Gagal download audio:', err.message);
+                        bus.emit('whatsapp.send_message', {
+                            to: sender,
+                            text: '❌ Gagal memproses voice note. Coba kirim ulang.'
+                        });
+                    }
+                    continue;
+                }
+
+                logger.verbose(`⚠️ Tipe pesan tidak didukung: ${type}`);
+            }
         });
 
     } catch (err) {
