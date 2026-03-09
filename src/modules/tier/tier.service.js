@@ -1,5 +1,5 @@
 // src/modules/tier/tier.service.js
-import { supabase } from '../../config/supabase.js';
+import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 import { isUserRegistered } from '../onboarding/onboarding.service.js';
 
@@ -66,13 +66,13 @@ export async function checkTransaksiLimit(nomorWa) {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { count } = await supabase
+    const { data: rows } = await db
         .from('transaksi')
-        .select('id', { count: 'exact', head: true })
+        .select('id')
         .eq('pengguna_id_alt', nomorWa)
         .gte('created_at', startOfMonth.toISOString());
 
-    const jumlah = count || 0;
+    const jumlah = rows?.length || 0;
 
     if (jumlah >= maxTrx) {
         return {

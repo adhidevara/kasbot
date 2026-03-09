@@ -21,13 +21,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const fastify = Fastify({ logger: false, disableRequestLogging: true });
 
-// ─── Serve static files dari folder /public ───────────────────────────────────
 await fastify.register(fastifyStatic, {
     root: join(__dirname, 'public'),
     prefix: '/',
 });
 
-// ─── Redirect root → api-doc ──────────────────────────────────────────────────
 fastify.get('/', (req, reply) => {
     reply.redirect('/api-doc.html');
 });
@@ -37,6 +35,9 @@ const start = async () => {
         await fastify.listen({ port: 3000, host: '0.0.0.0' });
         logger.info('🚀 Server Aktif di http://localhost:3000');
         logger.info('📄 API Docs: http://localhost:3000/api-doc.html');
+
+        const driver = process.env.DB_DRIVER || 'supabase';
+        logger.info(`🗄️  Database: ${driver.toUpperCase()}`);
 
         startScheduler();
 

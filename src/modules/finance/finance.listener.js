@@ -1,5 +1,5 @@
 // src/modules/finance/finance.listener.js
-import { supabase } from '../../config/supabase.js';
+import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 import bus from '../../shared/eventBus.js';
 
@@ -8,7 +8,7 @@ bus.on('ai.processing_finished', async (payload) => {
 
     try {
         // 1. Simpan transaksi utama
-        const { data: trx, error: trxErr } = await supabase
+        const { data: trx, error: trxErr } = await db
             .from('transaksi')
             .insert([{
                 pengguna_id:     payload.user_id,
@@ -19,7 +19,7 @@ bus.on('ai.processing_finished', async (payload) => {
                 deskripsi:       payload.text,
                 transaksi_at:    new Date().toISOString()
             }])
-            .select()
+            .select('*')
             .single();
 
         if (trxErr) throw trxErr;
@@ -35,7 +35,7 @@ bus.on('ai.processing_finished', async (payload) => {
                 harga_satuan: item.harga,
                 subtotal:     (item.qty || 0) * (item.harga || 0)
             }));
-            await supabase.from('detail_transaksi').insert(details);
+            await db.from('detail_transaksi').insert(details);
         }
 
         // 3. Simpan penyesuaian (diskon, pajak, dll)
@@ -47,7 +47,7 @@ bus.on('ai.processing_finished', async (payload) => {
                 nilai:        p.nilai,
                 tipe:         p.tipe
             }));
-            await supabase.from('penyesuaian_transaksi').insert(adjustments);
+            await db.from('penyesuaian_transaksi').insert(adjustments);
             logger.verbose(`💾 ${adjustments.length} penyesuaian disimpan`);
         }
 

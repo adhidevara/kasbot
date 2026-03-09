@@ -1,5 +1,5 @@
 // src/modules/onboarding/onboarding.service.js
-import { supabase } from '../../config/supabase.js';
+import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { cacheGet, cacheSet, cacheDel } from '../../shared/redis.js';
@@ -21,7 +21,7 @@ const USER_CACHE_TTL = 5 * 60; // 5 menit
 // ─── Supabase-backed onboarding state ────────────────────────────────────────
 
 async function getState(nomorWa) {
-    const { data } = await supabase
+    const { data } = await db
         .from('onboarding_state')
         .select('state')
         .eq('nomor_wa', nomorWa)
@@ -30,7 +30,7 @@ async function getState(nomorWa) {
 }
 
 async function setState(nomorWa, state) {
-    await supabase.from('onboarding_state').upsert({
+    await db.from('onboarding_state').upsert({
         nomor_wa: nomorWa,
         state,
         updated_at: new Date().toISOString()
@@ -38,7 +38,7 @@ async function setState(nomorWa, state) {
 }
 
 async function deleteState(nomorWa) {
-    await supabase.from('onboarding_state').delete().eq('nomor_wa', nomorWa);
+    await db.from('onboarding_state').delete().eq('nomor_wa', nomorWa);
 }
 
 // ─── Gemini: Saran kategori bisnis ───────────────────────────────────────────
@@ -80,7 +80,7 @@ export async function isUserRegistered(nomorWa) {
     }
 
     // Cache miss → query Supabase
-    const { data } = await supabase
+    const { data } = await db
         .from('pengguna')
         .select('*') // ambil semua sekalian untuk tier check
         .eq('nomor_wa', nomorWa)
@@ -209,7 +209,7 @@ export async function processOnboarding(nomorWa, text) {
     if (state.step === 3) {
         const bahanArray = text.trim().split(',').map(b => b.trim()).filter(Boolean).slice(0, 3);
 
-        const { error } = await supabase.from('pengguna').upsert({
+        const { error } = await db.from('pengguna').upsert({
             nomor_wa: nomorWa,
             nama_bisnis: state.nama_bisnis,
             kategori_bisnis: state.kategori_bisnis,

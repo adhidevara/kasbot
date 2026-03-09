@@ -1,5 +1,5 @@
 // src/modules/report/report.service.js
-import { supabase } from '../../config/supabase.js';
+import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 
 // ─── Rentang waktu ────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ function getDateRange(periode) {
 
 // ─── Ambil data transaksi ─────────────────────────────────────────────────────
 async function getTransaksi(userId, from, to) {
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from('transaksi')
         .select('total, tipe, transaksi_at, deskripsi')
         .eq('pengguna_id', userId)

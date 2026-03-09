@@ -1,6 +1,6 @@
 // src/shared/scheduler.js
 import logger from './logger.js';
-import { supabase } from '../config/supabase.js';
+import { db } from '../config/db.js';
 import { generateInsightMingguan } from '../modules/anomaly/anomaly.service.js';
 import { checkFitur } from '../modules/tier/tier.service.js';
 import bus from './eventBus.js';
@@ -17,7 +17,7 @@ function isWaktuInsight() {
 async function kirimInsightMingguan() {
     logger.info('📅 Scheduler: Mengirim insight mingguan...');
 
-    const { data: users, error } = await supabase
+    const { data: users, error } = await db
         .from('pengguna')
         .select('id, nomor_wa, kategori_bisnis, plan')
         .in('plan', ['basic', 'pro'])

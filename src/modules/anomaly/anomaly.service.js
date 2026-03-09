@@ -1,5 +1,5 @@
 // src/modules/anomaly/anomaly.service.js
-import { supabase } from '../../config/supabase.js';
+import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 
 
@@ -22,7 +22,7 @@ function calcStats(values) {
 async function getHistori30Hari(penggunaId, tipe) {
     const tiga0HariLalu = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data } = await supabase
+    const { data } = await db
         .from('transaksi')
         .select('total, transaksi_at')
         .eq('pengguna_id', penggunaId)
@@ -87,7 +87,7 @@ export async function detectAnomali(penggunaId, transaksiNominal, tipe) {
 export async function generateInsightMingguan(penggunaId, kategori_bisnis) {
     const tujuhHariLalu = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: transaksi } = await supabase
+    const { data: transaksi } = await db
         .from('transaksi')
         .select('total, tipe, created_at')
         .eq('pengguna_id', penggunaId)
