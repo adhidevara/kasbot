@@ -69,16 +69,20 @@ function formatCFOResponse(result) {
 
     // Info token sisa
     const tokenInfo = result.token_sisa != null
-        ? `\n🪙 *Token tersisa:* ${result.token_sisa}`
+        ? `\n🪙 Token tersisa: ${result.token_sisa}`
         : '';
 
-    return (
-        `*LAPORAN CFO KASBOT*\n\n` +
-        `${emoji} *Tipe:* ${result.tipe.toUpperCase()}\n` +
-        `📝 *Item:*\n${items}\n` +
-        `${penyesuaianBaris}\n` +
-        `💵 *Total Bayar:* Rp${result.total.toLocaleString('id-ID')}\n` +
-        `${tokenInfo}\n\n` +
-        `_Data berhasil diamankan ke Supabase._`
-    );
+    // Pesan Nata dari AI — fallback ke teks generik
+    const pesanNata = result.pesan_konfirmasi
+        ? `${result.pesan_konfirmasi}\n\n`
+        : `${emoji} Transaksi Rp${result.total.toLocaleString('id-ID')} berhasil dicatat.\n\n`;
+
+    // Detail ringkas
+    const detail =
+        `📝 *Detail:*\n${items}` +
+        `${penyesuaianBaris}` +
+        `\n💵 *Total:* Rp${result.total.toLocaleString('id-ID')}` +
+        `${tokenInfo}`;
+
+    return `${pesanNata}${detail}`;
 }

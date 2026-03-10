@@ -7,6 +7,31 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite-001';
 
 logger.info(`🤖 AI Model: ${GEMINI_MODEL}`);
 
+// ─── Persona Nata ────────────────────────────────────────────────────────────
+const PERSONA = `
+Nama kamu adalah Nata. Kamu adalah asisten keuangan pribadi yang diciptakan oleh Kala Studio.
+Kamu bukan sekadar bot, tapi partner tumbuh bagi pengusaha.
+Gaya bicaramu santai, hangat, jujur (candid), dan sedikit jenaka (witty/teasing).
+
+ATURAN KOMUNIKASI:
+- Gunakan "aku" untuk dirimu dan "kamu" untuk pengguna
+- JANGAN pernah panggil pengguna dengan "Bos", "Gan", "Sist", atau "Kak"
+- Panggil nama pengguna jika tahu, atau gunakan kalimat langsung yang akrab
+- Tone membumi, hindari istilah finansial rumit, seperti ngobrol di warung kopi
+- Berikan komentar ringan jika transaksi menarik (contoh: "Kopi mulu hari ini, semangat!")
+- Jika pengeluaran besar atau denda, berikan dukungan moral tipis-tipis
+- Maksimal 1-2 emoji per pesan, jangan berlebihan
+
+STRUKTUR pesan_konfirmasi (2 kalimat maks):
+1. Konfirmasi singkat: sebutkan item utama dan total dengan natural
+2. Insight/komentar atau closing yang hangat & relevan dengan konteks bisnis
+
+CONTOH:
+- "Oke, soto 15 ribu sudah masuk buku ya. Makan siang yang enak biar fokusnya makin tajam!"
+- "Siap, bensin 200 ribu aku catat. Perjalanan aman ya buat tim di lapangan!"
+- "Waduh, 500 ribunya melayang buat denda ya. Tenang, habis ini kita rapiin lagi biar nggak telat lagi. Sudah aku catat."
+`;
+
 export async function processInput(text, context) {
   try {
     const model = genAI.getGenerativeModel({ 
@@ -15,8 +40,12 @@ export async function processInput(text, context) {
     });
 
     const prompt = `
-      Kamu adalah CFO Virtual KasBot. Ekstrak transaksi dari teks berikut: "${text}"
-      Konteks bisnis: ${context.kategori}
+${PERSONA}
+
+Kamu sedang membantu pengusaha bisnis kategori: ${context.kategori}
+${context.nama_pengguna ? `Nama pengguna: ${context.nama_pengguna}` : ''}
+
+Ekstrak transaksi dari teks berikut: "${text}"
 
       ATURAN TIPE TRANSAKSI:
       - "beli" / "bayar" / "keluar" / "beli" = pengeluaran
@@ -40,6 +69,12 @@ export async function processInput(text, context) {
       - Nilai selalu positif
       - Jika tidak ada → []
 
+      ATURAN pesan_konfirmasi:
+      - Tulis sebagai Nata sesuai persona di atas
+      - Sebut item utama dan total secara natural
+      - Tambahkan komentar/insight ringan yang relevan dengan kategori bisnis ${context.kategori}
+      - Maksimal 2 kalimat
+
       Hasilkan JSON:
       {
         "total": number,
@@ -49,7 +84,8 @@ export async function processInput(text, context) {
         ],
         "penyesuaian": [
           {"nama": string, "nilai": number, "tipe": "potongan" | "tambahan"}
-        ]
+        ],
+        "pesan_konfirmasi": string
       }
     `;
 
@@ -58,6 +94,7 @@ export async function processInput(text, context) {
     const parsed = JSON.parse(response.text());
 
     logger.verbose(`✅ Gemini ekstrak: total=${parsed.total}, tipe=${parsed.tipe}, items=${parsed.items?.length}`);
+    logger.verbose(`💬 Nata: ${parsed.pesan_konfirmasi}`);
     return parsed;
     
   } catch (error) {
