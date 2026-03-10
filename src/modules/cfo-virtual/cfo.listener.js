@@ -10,7 +10,7 @@ bus.on('finance.transaction_saved', async (payload) => {
     const message = formatCFOResponse(payload);
     bus.emit('whatsapp.send_message', { to: payload.sender, text: message });
 
-    // Anomaly detection (hanya untuk plan basic/pro)
+    // Anomaly detection (hanya untuk plan starter/business/professional)
     const nomorWa = payload.pengguna_id_alt || payload.sender;
     const bolehAnomali = await checkFitur(nomorWa, 'fiturAnomali');
 
@@ -72,13 +72,23 @@ function formatCFOResponse(result) {
         ? `\n🪙 Token tersisa: ${result.token_sisa}`
         : '';
 
-    // Pesan Nata dari AI — fallback ke teks generik
+    // Label tipe transaksi
+    const tipeLabel = result.tipe === 'pemasukan'
+        ? `💰 *PEMASUKAN*`
+        : `💸 *PENGELUARAN*`;
+
+    // Pesan Nata dari AI — fallback berdasarkan tipe transaksi
+    const fallbackNata = result.tipe === 'pemasukan'
+        ? `Oke, pemasukan Rp${result.total.toLocaleString('id-ID')} sudah aku catat. Semangat terus!`
+        : `Siap, pengeluaran Rp${result.total.toLocaleString('id-ID')} sudah aku catat ya.`;
+
     const pesanNata = result.pesan_konfirmasi
         ? `${result.pesan_konfirmasi}\n\n`
-        : `${emoji} Transaksi Rp${result.total.toLocaleString('id-ID')} berhasil dicatat.\n\n`;
+        : `${fallbackNata}\n\n`;
 
     // Detail ringkas
     const detail =
+        `${tipeLabel}\n` +
         `📝 *Detail:*\n${items}` +
         `${penyesuaianBaris}` +
         `\n💵 *Total:* Rp${result.total.toLocaleString('id-ID')}` +
