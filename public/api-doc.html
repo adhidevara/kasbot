@@ -289,7 +289,7 @@
               <button class="tab-btn" onclick="switchTab(this,'login-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'login-404')">❌ 404</button>
             </div>
-            <div id="login-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/auth/login \
+            <div id="login-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/auth/login \
   -H <span class="c-green">"Content-Type: application/json"</span> \
   -d <span class="c-green">'{"nomor_wa": "628123456789"}'</span></pre></div></div></div>
             <div id="login-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
@@ -334,7 +334,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'was-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'was-200')">✅ 200 OK</button>
             </div>
-            <div id="was-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/wa/status \
+            <div id="was-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/wa/status \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="was-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"status"</span>: <span class="c-green">"connected"</span> <span class="c-muted">// connected | waiting_qr | disconnected</span> }</pre></div></div></div>
           </div>
@@ -356,7 +356,7 @@
               <button class="tab-btn" onclick="switchTab(this,'waqr-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'waqr-400')">❌ 400</button>
             </div>
-            <div id="waqr-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/wa/qr \
+            <div id="waqr-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/wa/qr \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="waqr-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"qr"</span>: <span class="c-green">"data:image/png;base64,iVBORw0KGgo..."</span> <span class="c-muted">// render: &lt;img src={qr} /&gt;</span> }</pre></div></div></div>
             <div id="waqr-400" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"QR tidak tersedia. Status: connected"</span> }</pre></div></div></div>
@@ -377,7 +377,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ware-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ware-200')">✅ 200 OK</button>
             </div>
-            <div id="ware-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/wa/reconnect \
+            <div id="ware-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/wa/reconnect \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ware-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Reconnect dipicu. Cek status dalam beberapa detik."</span> }</pre></div></div></div>
           </div>
@@ -397,7 +397,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'walo-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'walo-200')">✅ 200 OK</button>
             </div>
-            <div id="walo-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/wa/logout \
+            <div id="walo-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/wa/logout \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="walo-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"WhatsApp berhasil disconnect"</span> }</pre></div></div></div>
           </div>
@@ -427,7 +427,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'wasend-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'wasend-200')">✅ 200 OK</button>
             </div>
-            <div id="wasend-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/wa/send \
+            <div id="wasend-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/wa/send \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
   -d <span class="c-green">'{"to": "628123456789", "text": "Plan Anda sudah diupgrade ke *Basic*! 🎉"}'</span></pre></div></div></div>
@@ -469,7 +469,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ulist-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ulist-200')">✅ 200 OK</button>
             </div>
-            <div id="ulist-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> "https://kalaproject-prod.up.railway.app/api/users?plan=trial&limit=20" \
+            <div id="ulist-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> "kalastudio-prod.up.railway.app/api/users?plan=trial&limit=20" \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ulist-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"data"</span>: [
@@ -517,7 +517,7 @@
               <button class="tab-btn" onclick="switchTab(this,'ureg-201')">✅ 201 Created</button>
               <button class="tab-btn" onclick="switchTab(this,'ureg-409')">❌ 409 Conflict</button>
             </div>
-            <div id="ureg-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/users/register \
+            <div id="ureg-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/users/register \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
   -d <span class="c-green">'{
@@ -556,7 +556,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'up-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'up-200')">✅ 200 OK</button>
             </div>
-            <div id="up-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/users/628123456789 \
+            <div id="up-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/users/628123456789 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="up-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"628123456789"</span>,
@@ -596,7 +596,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'uupd-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'uupd-200')">✅ 200 OK</button>
             </div>
-            <div id="uupd-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X PATCH https://kalaproject-prod.up.railway.app/api/users/628123456789 \
+            <div id="uupd-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X PATCH kalastudio-prod.up.railway.app/api/users/628123456789 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
   -d <span class="c-green">'{"nama_bisnis": "Warung Pak Anto 2", "bahan_baku": ["beras","telur","minyak"]}'</span></pre></div></div></div>
@@ -624,7 +624,7 @@
               <button class="tab-btn" onclick="switchTab(this,'upl-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'upl-403')">❌ 403 Expired</button>
             </div>
-            <div id="upl-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/users/628123456789/plan \
+            <div id="upl-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/users/628123456789/plan \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="upl-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"plan"</span>: <span class="c-green">"basic"</span>,
@@ -667,7 +667,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'uplupd-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'uplupd-200')">✅ 200 OK</button>
             </div>
-            <div id="uplupd-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X PATCH https://kalaproject-prod.up.railway.app/api/users/628123456789/plan \
+            <div id="uplupd-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X PATCH kalastudio-prod.up.railway.app/api/users/628123456789/plan \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
   -d <span class="c-green">'{"plan": "basic"}'</span></pre></div></div></div>
@@ -691,7 +691,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'udel-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'udel-200')">✅ 200 OK</button>
             </div>
-            <div id="udel-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X DELETE https://kalaproject-prod.up.railway.app/api/users/628123456789 \
+            <div id="udel-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X DELETE kalastudio-prod.up.railway.app/api/users/628123456789 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="udel-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Pengguna dan seluruh data berhasil dihapus"</span> }</pre></div></div></div>
           </div>
@@ -712,7 +712,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ucache-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ucache-200')">✅ 200 OK</button>
             </div>
-            <div id="ucache-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/users/628123456789/cache/invalidate \
+            <div id="ucache-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/users/628123456789/cache/invalidate \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ucache-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Cache berhasil dihapus"</span> }</pre></div></div></div>
           </div>
@@ -753,7 +753,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ep1-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ep1-200')">✅ 200 OK</button>
             </div>
-            <div id="ep1-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> "https://kalaproject-prod.up.railway.app/api/transaksi/628123456789?tipe=pemasukan&dari=2026-03-01&limit=10" \
+            <div id="ep1-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> "kalastudio-prod.up.railway.app/api/transaksi/628123456789?tipe=pemasukan&dari=2026-03-01&limit=10" \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep1-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"data"</span>: [
@@ -788,7 +788,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'tsum-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'tsum-200')">✅ 200 OK</button>
             </div>
-            <div id="tsum-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/transaksi/628123456789/summary \
+            <div id="tsum-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/transaksi/628123456789/summary \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="tsum-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"bulan"</span>: <span class="c-green">"2026-03"</span>,
@@ -816,7 +816,7 @@
               <button class="tab-btn" onclick="switchTab(this,'ep2-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'ep2-404')">❌ 404</button>
             </div>
-            <div id="ep2-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/transaksi/628123456789/uuid-abc-123 \
+            <div id="ep2-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/transaksi/628123456789/uuid-abc-123 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep2-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"id"</span>: <span class="c-green">"uuid-abc-123"</span>,
@@ -863,7 +863,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'tupd-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'tupd-200')">✅ 200 OK</button>
             </div>
-            <div id="tupd-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X PATCH https://kalaproject-prod.up.railway.app/api/transaksi/628123456789/uuid-abc-123 \
+            <div id="tupd-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X PATCH kalastudio-prod.up.railway.app/api/transaksi/628123456789/uuid-abc-123 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
   -d <span class="c-green">'{"total": 90000, "deskripsi": "Beli beras 6kg (koreksi)"}'</span></pre></div></div></div>
@@ -886,7 +886,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ep7-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ep7-200')">✅ 200 OK</button>
             </div>
-            <div id="ep7-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X DELETE https://kalaproject-prod.up.railway.app/api/transaksi/628123456789/uuid-abc-123 \
+            <div id="ep7-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X DELETE kalastudio-prod.up.railway.app/api/transaksi/628123456789/uuid-abc-123 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep7-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Transaksi berhasil dihapus"</span> }</pre></div></div></div>
           </div>
@@ -915,7 +915,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ep8-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ep8-200')">✅ 200 OK</button>
             </div>
-            <div id="ep8-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/laporan/628123456789/harian \
+            <div id="ep8-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/laporan/628123456789/harian \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep8-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"tanggal"</span>: <span class="c-green">"2026-03-09"</span>,
@@ -946,7 +946,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ep4-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ep4-200')">✅ 200 OK</button>
             </div>
-            <div id="ep4-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/laporan/628123456789/mingguan \
+            <div id="ep4-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/laporan/628123456789/mingguan \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep4-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"periode"</span>: { <span class="c-blue">"dari"</span>: <span class="c-green">"2026-03-03"</span>, <span class="c-blue">"sampai"</span>: <span class="c-green">"2026-03-09"</span> },
@@ -972,7 +972,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ep5-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ep5-200')">✅ 200 OK</button>
             </div>
-            <div id="ep5-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/laporan/628123456789/bulanan \
+            <div id="ep5-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/laporan/628123456789/bulanan \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep5-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"bulan"</span>: <span class="c-green">"2026-03"</span>,
@@ -1013,7 +1013,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'ep6-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ep6-200')">✅ 200 OK</button>
             </div>
-            <div id="ep6-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/anomali/628123456789/insight \
+            <div id="ep6-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/anomali/628123456789/insight \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep6-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"periode"</span>: { <span class="c-blue">"dari"</span>: <span class="c-green">"2026-03-03"</span>, <span class="c-blue">"sampai"</span>: <span class="c-green">"2026-03-09"</span> },
@@ -1056,7 +1056,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'adet-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'adet-200')">✅ 200 OK</button>
             </div>
-            <div id="adet-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/anomali/628123456789/detect \
+            <div id="adet-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/anomali/628123456789/detect \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
   -d <span class="c-green">'{"nominal": 2500000, "tipe": "pengeluaran"}'</span></pre></div></div></div>
@@ -1097,7 +1097,7 @@
             <table class="field-table">
               <thead><tr><th>Param</th><th>Tipe</th><th>Keterangan</th></tr></thead>
               <tbody>
-                <tr><td class="field-name">nomorWa</td><td class="field-type">string</td><td class="field-desc">Nomor WA tanpa @s.whatsapp.net — contoh: <code style="color:var(--gold)">6282264226680</code></td></tr>
+                <tr><td class="field-name">nomorWa</td><td class="field-type">string</td><td class="field-desc">Nomor WA tanpa @s.whatsapp.net — contoh: <code style="color:var(--gold)">6281234567890</code></td></tr>
               </tbody>
             </table>
             <div class="tabs">
@@ -1105,11 +1105,11 @@
               <button class="tab-btn" onclick="switchTab(this,'admu-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'admu-404')">❌ 404</button>
             </div>
-            <div id="admu-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/admin/user/6282264226680 \
+            <div id="admu-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/admin/user/6281234567890 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="admu-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"id"</span>: <span class="c-green">"b70de035-4a19-4fdc-840c-7b32c326a407"</span>,
-  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6282264226680@s.whatsapp.net"</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
   <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Z-Score"</span>,
   <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
   <span class="c-blue">"token_balance"</span>: <span class="c-orange">49</span>,
@@ -1137,7 +1137,7 @@
             <table class="field-table">
               <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
               <tbody>
-                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA user — contoh: <code style="color:var(--gold)">6282264226680</code></td></tr>
+                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA user — contoh: <code style="color:var(--gold)">6281234567890</code></td></tr>
                 <tr><td class="field-name">jumlah</td><td class="field-type">integer</td><td><span class="field-required">required</span></td><td class="field-desc">Jumlah token yang ditambahkan (harus &gt; 0)</td></tr>
               </tbody>
             </table>
@@ -1146,13 +1146,13 @@
               <button class="tab-btn" onclick="switchTab(this,'admt-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'admt-400')">❌ 400</button>
             </div>
-            <div id="admt-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/admin/token/topup \
+            <div id="admt-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/admin/token/topup \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
-  -d <span class="c-green">'{ "nomor_wa": "6282264226680", "jumlah": 300 }'</span></pre></div></div></div>
+  -d <span class="c-green">'{ "nomor_wa": "6281234567890", "jumlah": 300 }'</span></pre></div></div></div>
             <div id="admt-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
-  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6282264226680@s.whatsapp.net"</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
   <span class="c-blue">"added"</span>: <span class="c-orange">300</span>,
   <span class="c-blue">"new_balance"</span>: <span class="c-orange">349</span>
 }</pre></div></div></div>
@@ -1176,7 +1176,7 @@
             <table class="field-table">
               <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
               <tbody>
-                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA user — contoh: <code style="color:var(--gold)">6282264226680</code></td></tr>
+                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA user — contoh: <code style="color:var(--gold)">6281234567890</code></td></tr>
                 <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold)">trial</code> · <code style="color:var(--gold)">starter</code> · <code style="color:var(--gold)">business</code></td></tr>
               </tbody>
             </table>
@@ -1185,13 +1185,13 @@
               <button class="tab-btn" onclick="switchTab(this,'admp-200')">✅ 200 OK</button>
               <button class="tab-btn" onclick="switchTab(this,'admp-400')">❌ 400</button>
             </div>
-            <div id="admp-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/admin/plan/set \
+            <div id="admp-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/admin/plan/set \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
-  -d <span class="c-green">'{ "nomor_wa": "6282264226680", "plan": "starter" }'</span></pre></div></div></div>
+  -d <span class="c-green">'{ "nomor_wa": "6281234567890", "plan": "starter" }'</span></pre></div></div></div>
             <div id="admp-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
-  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6282264226680@s.whatsapp.net"</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
   <span class="c-blue">"plan"</span>: <span class="c-green">"starter"</span>,
   <span class="c-blue">"token_balance"</span>: <span class="c-orange">300</span>
 }</pre></div></div></div>
@@ -1225,7 +1225,7 @@
               <button class="tab-btn active-req" onclick="switchTab(this,'stats-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'stats-200')">✅ 200 OK</button>
             </div>
-            <div id="stats-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/stats \
+            <div id="stats-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/stats \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="stats-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"users"</span>: {
