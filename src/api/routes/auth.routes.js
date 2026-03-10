@@ -24,7 +24,7 @@ export async function authRoutes(fastify) {
             password,
             nomor_wa,
             kategori_bisnis,
-            bahan_baku = [],
+            bahan_baku,
             plan = 'trial',
         } = request.body || {};
 
@@ -69,6 +69,10 @@ export async function authRoutes(fastify) {
             }
         }
 
+        // 2. SANITASI BAHAN BAKU
+        // Pastikan bahan_baku selalu berupa Array sebelum masuk ke DB (mencegah error JSONB/Array di Postgres)
+        const finalBahanBaku = Array.isArray(bahan_baku) ? bahan_baku : [];
+
         const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
         const nomorFormatted = nomor_wa
             ? (nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`)
@@ -86,7 +90,7 @@ export async function authRoutes(fastify) {
                 password_hash,
                 nomor_wa:           nomorFormatted,
                 kategori_bisnis,
-                bahan_baku,
+                bahan_baku:         finalBahanBaku,
                 onboarding_selesai: true,
                 plan,
                 trial_ends_at:      trialEnd.toISOString(),
