@@ -8,7 +8,7 @@ import { isUserRegistered, invalidateUserCache } from '../onboarding/onboarding.
 const PLAN_CONFIG = {
     trial: {
         label:                'Trial',
-        tokenAwal:            50,
+        tokenAwal:            15,
         fiturAnomali:         false,
         fiturInsightMingguan: false,
     },
@@ -70,6 +70,7 @@ export async function checkAccess(nomorWa) {
                     `💳 *Starter* — Rp 99.000/bulan (300 token)\n` +
                     `💳 *Business* — Rp 249.000/bulan (1.000 token)\n` +
                     `💳 *Professional* — Token unlimited\n\n` +
+                    `Atau kunjungi: https://www.kalastudioai.com/harga\n` +
                     `Hubungi admin untuk aktivasi.`
             };
         }
@@ -118,7 +119,8 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
                 `Hubungi admin untuk top-up atau upgrade paket:\n` +
                 `💳 *Starter* — Rp 99.000/bulan (300 token)\n` +
                 `💳 *Business* — Rp 249.000/bulan (1.000 token)\n` +
-                `💳 *Professional* — Token unlimited`
+                `💳 *Professional* — Token unlimited\n\n` +
+                `Kunjungi: https://www.kalastudioai.com/harga`
         };
     }
 

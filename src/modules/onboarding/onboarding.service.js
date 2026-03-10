@@ -112,9 +112,11 @@ export async function isInOnboarding(nomorWa) {
 export async function startOnboarding(nomorWa) {
     await setState(nomorWa, { step: 1 });
     return (
-        `👋 *Halo! Selamat datang di KasBot!*\n\n` +
-        `Saya asisten keuangan AI Anda yang akan membantu mencatat transaksi dan memberi insight bisnis.\n\n` +
-        `Boleh saya tahu *nama bisnis* Anda?`
+        `Halo! Selamat datang di *Nata* 👋\n\n` +
+        `Mulai hari ini, aku asisten keuangan pribadi kamu. ` +
+        `Kamu punya *15 Token Gratis* buat nyobain saktinya catat transaksi pakai suara atau foto nota.\n\n` +
+        `Cara pakainya simpel: cukup kirim *Teks*, *Voice Note*, atau *Foto Nota* di sini — nanti aku yang catat otomatis.\n\n` +
+        `Tapi dulu, boleh aku tahu *nama bisnis* kamu?`
     );
 }
 
@@ -216,9 +218,9 @@ export async function processOnboarding(nomorWa, text) {
             bahan_baku: bahanArray,
             onboarding_selesai: true,
             plan: 'trial',
-            trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            token_balance: 50,
-            token_total:   50,
+            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            token_balance: 15,
+            token_total:   15,
             token_reset_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         }, { onConflict: 'nomor_wa' });
@@ -233,12 +235,12 @@ export async function processOnboarding(nomorWa, text) {
 
         return {
             reply:
-                `🎉 *Profil bisnis Anda sudah siap!*\n\n` +
-                `🏪 *Bisnis:* ${state.nama_bisnis}\n` +
-                `📂 *Kategori:* ${state.kategori_bisnis}\n` +
-                `📦 *Bahan utama dipantau:* ${bahanArray.join(', ')}\n\n` +
-                `⏳ *Status:* Trial 14 hari (GRATIS)\n\n` +
-                `Mulai catat transaksi pertama Anda sekarang!\n` +
+                `Oke, semua sudah aku catat! 🎉\n\n` +
+                `🏪 *${state.nama_bisnis}*\n` +
+                `📂 ${state.kategori_bisnis}\n` +
+                `📦 ${bahanArray.join(', ')}\n\n` +
+                `Kamu punya *15 Token* dan *7 hari trial gratis* buat nyobain Nata.\n\n` +
+                `Yuk, coba kirim transaksi pertama kamu sekarang!\n` +
                 `_Contoh: "jual ayam 10 ekor @50000" atau "beli pakan 50 kg @15000"_`,
             done: true
         };
