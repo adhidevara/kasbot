@@ -6,7 +6,7 @@ import {
     getUserProfile,
     invalidateUserCache,
 } from '../../modules/onboarding/onboarding.service.js';
-import { checkAccess, checkTransaksiLimit } from '../../modules/tier/tier.service.js';
+import { checkAccess, getPlanStatusMessage } from '../../modules/tier/tier.service.js';
 
 export async function userRoutes(fastify) {
 
@@ -45,15 +45,24 @@ export async function userRoutes(fastify) {
             ? new Date(trial_ends_at)
             : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
-        const { data, error } = await db.from('pengguna').insert({
+        const PLAN_TOKEN_MAP = { trial: 50, starter: 300, business: 1000 };
+        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 50;
+
+        const { data, error } = await db.from('pengguna').insert([{
             nomor_wa,
             nama_bisnis,
             kategori_bisnis,
             bahan_baku,
             onboarding_selesai: true,
             plan,
-            trial_ends_at: trialEnd.toISOString(),
-        }).single();
+            trial_ends_at:  trialEnd.toISOString(),
+            token_balance:  tokenAwal,
+            token_total:    tokenAwal,
+            token_reset_at: new Date().toISOString(),
+            updated_at:     new Date().toISOString(),
+        }])
+        .select('*')
+        .single();
 
         if (error) return reply.code(500).send({ success: false, message: error.message });
 
@@ -105,8 +114,6 @@ export async function userRoutes(fastify) {
             return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
         }
 
-        const limitCheck = await checkTransaksiLimit(nomorWa);
-
         if (access.reason === 'trial_expired') {
             return reply.code(403).send({
                 success: false,
@@ -115,21 +122,18 @@ export async function userRoutes(fastify) {
             });
         }
 
-        const batas = access.limits?.maxTransaksiPerBulan;
-        const terpakai = limitCheck.jumlahTrxBulanIni ?? 0;
-
         return reply.send({
-            plan: access.plan,
-            trial_ends_at: access.plan === 'trial' ? (await getUserProfile(nomorWa))?.trial_ends_at : null,
-            kuota: {
-                transaksi_bulan_ini: terpakai,
-                batas: batas === Infinity ? null : batas,
-                sisa: batas === Infinity ? null : Math.max(0, batas - terpakai),
+            plan:          access.plan,
+            label:         access.config?.label,
+            trial_ends_at: access.plan === 'trial' ? access.user?.trial_ends_at : null,
+            token: {
+                balance: access.tokenBalance,
+                total:   access.user?.token_total ?? 0,
+                reset_at: access.user?.token_reset_at ?? null,
             },
             fitur: {
-                laporan_bulanan: access.limits?.fiturAnomali ?? false,
-                insight_mingguan: access.limits?.fiturInsightMingguan ?? false,
-                anomali: access.limits?.fiturAnomali ?? false,
+                anomali:          access.config?.fiturAnomali ?? false,
+                insight_mingguan: access.config?.fiturInsightMingguan ?? false,
             },
         });
     });
@@ -139,19 +143,29 @@ export async function userRoutes(fastify) {
         const { nomorWa } = request.params;
         const { plan, trial_ends_at } = request.body || {};
 
-        const validPlans = ['trial', 'basic', 'pro'];
+        const validPlans = ['trial', 'starter', 'business'];
         if (!plan || !validPlans.includes(plan)) {
             return reply.code(400).send({ success: false, message: `plan harus salah satu dari: ${validPlans.join(', ')}` });
         }
 
-        const updateData = { plan };
-        if (trial_ends_at) updateData.trial_ends_at = trial_ends_at;
+        // Import setPlan dari tier.service untuk reset token sekaligus
+        const { setPlan } = await import('../../modules/tier/tier.service.js');
+        const result = await setPlan(nomorWa, plan);
+        if (!result.success) {
+            return reply.code(400).send({ success: false, message: result.message });
+        }
 
-        const { error } = await db.from('pengguna').update(updateData).eq('nomor_wa', nomorWa);
-        if (error) return reply.code(500).send({ success: false, message: error.message });
+        // Update trial_ends_at kalau ada
+        if (trial_ends_at) {
+            await db.from('pengguna').update({ trial_ends_at }).eq('nomor_wa', nomorWa);
+            await invalidateUserCache(nomorWa);
+        }
 
-        await invalidateUserCache(nomorWa);
-        return reply.send({ success: true, message: `Plan diupdate ke ${plan}` });
+        return reply.send({
+            success:       true,
+            message:       `Plan diupdate ke ${plan}`,
+            token_balance: result.tokenBalance,
+        });
     });
 
     // DELETE /api/users/:nomorWa — hapus pengguna (admin)

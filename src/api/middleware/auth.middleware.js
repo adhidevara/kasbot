@@ -27,5 +27,5 @@ export function verifyAdmin(request, reply, done) {
 }
 
 export function generateToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+    return jwt.sign(payload, JWT_SECRET);
 }

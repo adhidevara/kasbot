@@ -117,7 +117,6 @@ export async function authRoutes(fastify) {
             success: true,
             message: 'Registrasi berhasil',
             token,
-            expires_in: 604800,
             user: {
                 id:            user.id,
                 nama:          user.nama,
@@ -189,7 +188,6 @@ export async function authRoutes(fastify) {
         return reply.send({
             success: true,
             token,
-            expires_in: 604800,
             user: {
                 id:             user.id,
                 nama:           user.nama,
