@@ -346,7 +346,7 @@
                 <tr><td class="field-name">email</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Alamat email pengguna</td></tr>
                 <tr><td class="field-name">password</td><td class="field-type">string (Bcrypt)</td><td><span class="field-required">required</span></td><td class="field-desc">Password untuk autentikasi</td></tr>
                 <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Format internasional tanpa +. Contoh: <code style="color:var(--gold-light)">628123456789</code></td></tr>
-                <tr><td class="field-name">bahan_baku</td><td class="field-type">Array</td><td><span class="field-required">required</span></td><td class="field-desc">Jenis bahan baku yang digunakan</td></tr>
+                <tr><td class="field-name">bahan_baku</td><td class="field-type">Array</td><td><span class="field-optional">Opsional</span></td><td class="field-desc">Jenis bahan baku yang digunakan</td></tr>
                 <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Plan yang dipilih, Default : "trial"</td></tr>
               </tbody>
             </table>
@@ -365,12 +365,12 @@
     "password": "passwordTersembunyi123",
     "nomor_wa": "6281234567890",
     "kategori_bisnis": "F&B",
+    "plan": "trial",
     "bahan_baku": [
       "Biji Kopi Arabika",
       "Susu UHT",
       "Gula Aren"
-    ],
-    "plan": "trial"
+    ]
   }'
 </span></pre></div></div></div>
             <div id="register-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
