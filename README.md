@@ -11,9 +11,9 @@ KasBot adalah bot WhatsApp berbasis AI yang membantu pelaku UMKM Indonesia menca
 - **🎙️ Voice Note** — Rekam transaksi dengan suara, ditranskripsi via OpenAI Whisper
 - **🧠 AI Extraction** — Gemini AI mengekstrak item, qty, satuan, harga, diskon, dan pajak secara otomatis
 - **👤 Onboarding Personalisasi** — Setup profil bisnis via percakapan WA (nama bisnis, kategori, bahan baku utama)
-- **📊 CFO Virtual** — Laporan transaksi otomatis dikirim balik ke user setiap pencatatan
+- **📊 CFO Virtual** — Laporan transaksi otomatis dikirim balik ke user setiap pencatatan beserta sisa token
 - **⚠️ Anomaly Detection** — Deteksi otomatis jika ada transaksi yang tidak wajar dibanding histori
-- **💳 Tier System** — Trial 14 hari gratis, upgrade ke Basic/Pro untuk fitur lengkap
+- **🪙 Token System** — Setiap aktivitas (teks/foto/voice note) menggunakan 1 token; voice note dihitung per 15 detik
 
 ---
 
@@ -56,15 +56,27 @@ kasbot/
 │   │   ├── onboarding/
 │   │   │   └── onboarding.service.js # Alur onboarding 4 langkah via WA
 │   │   ├── tier/
-│   │   │   └── tier.service.js     # Manajemen plan & batas akses
+│   │   │   └── tier.service.js     # Manajemen token & plan
 │   │   └── whatsapp/
 │   │       └── whatsapp.service.js # Koneksi & listener WhatsApp
+│   ├── api/
+│   │   └── routes/
+│   │       ├── admin.routes.js     # Manajemen token & plan (admin)
+│   │       ├── auth.routes.js
+│   │       ├── transaksi.routes.js
+│   │       ├── laporan.routes.js
+│   │       ├── anomali.routes.js
+│   │       ├── stats.routes.js
+│   │       ├── user.routes.js
+│   │       └── wa.routes.js
 │   └── shared/
 │       ├── errorHandler.js         # Global error handler
 │       ├── eventBus.js             # Event bus antar modul
 │       ├── logger.js               # Logger dengan level kontrol
 │       ├── queue.js                # BullMQ queue definitions
-│       └── queue.worker.js         # BullMQ workers (text + media)
+│       ├── redis.js                # Redis client + cache helpers
+│       ├── scheduler.js            # Scheduler harian/mingguan
+│       └── queue.worker.js         # BullMQ workers
 ├── logs/                           # PM2 log output (auto-generated)
 ├── ecosystem.config.cjs            # Konfigurasi PM2
 ├── migration_final.sql             # Schema database Supabase
@@ -104,7 +116,6 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 # Redis
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
-REDIS_PASSWORD=
 
 # Level log: silent | error | warn | info | verbose
 LOG_LEVEL=info
@@ -112,12 +123,11 @@ LOG_LEVEL=info
 
 ### 3. Jalankan Redis
 ```bash
-# Menggunakan Docker
 docker run -d -p 6379:6379 redis:alpine
 ```
 
 ### 4. Setup Database
-Jalankan `migration_final.sql` di **Supabase → SQL Editor**.
+Jalankan `migration_final.sql` di **Supabase → SQL Editor**, lalu jalankan juga `migration_token.sql` untuk token system.
 
 ### 5. Jalankan
 
@@ -146,12 +156,6 @@ npm run logs      # Lihat log realtime
 npm run status    # Cek status bot
 ```
 
-**Auto-start saat server reboot:**
-```bash
-pm2 startup
-pm2 save
-```
-
 ---
 
 ## 📊 Alur Sistem
@@ -159,43 +163,66 @@ pm2 save
 ```
 Pesan WA masuk (teks / foto / voice note)
     ↓
-Masuk ke BullMQ Queue (messageQueue / mediaQueue)
+Masuk ke BullMQ Queue
     ↓
-Worker memproses antrian (maks 5 concurrent teks, 3 media)
-    ↓
-Cek onboarding & tier user (state di Supabase)
+Cek onboarding & token user
     ↓
 Media processing (OCR / STT jika perlu)
     ↓
 AI Gemini ekstrak transaksi → JSON
     ↓
+Deduct token user
+    ↓
 Simpan ke Supabase (transaksi + detail + penyesuaian)
     ↓
-CFO Virtual kirim laporan ke user
+CFO Virtual kirim laporan + sisa token ke user
     ↓
-Anomaly detection (plan Basic/Pro)
+Anomaly detection (plan Starter/Business)
 ```
 
 ---
 
-## 🔧 Skalabilitas
+## 🪙 Token System
 
-| Skala | Status | Implementasi |
-|---|---|---|
-| 1–20 user | ✅ Done | PM2 auto-restart, LOG_LEVEL=warn |
-| 20–50 user | ✅ Done | BullMQ + Redis queue, onboardingState ke Supabase |
-| 50–100 user | 🔜 Planned | WA Business API, Redis cache, connection pooling |
-| 100+ user | 🔜 Planned | Multi-instance, load balancer, migrate dari Baileys |
+Setiap aktivitas pengguna menggunakan token:
+
+| Aktivitas | Token |
+|---|---|
+| Input teks | 1 token |
+| Scan foto struk | 1 token |
+| Voice note 1–15 detik | 1 token |
+| Voice note 16–30 detik | 2 token |
+| Voice note 31–45 detik | 3 token |
+
+Token **tidak dikurangi** jika AI gagal mengenali transaksi.
 
 ---
 
 ## 💳 Paket Langganan
 
-| Plan | Harga | Transaksi/Bulan | Anomali Detection |
-|---|---|---|---|
-| Trial | Gratis 14 hari | 30 | ❌ |
-| Basic | Rp 149.000/bulan | 300 | ✅ |
-| Pro | Rp 289.000/bulan | Unlimited | ✅ |
+| Plan | Harga | Token/Bulan | Anomali Detection | Insight Mingguan |
+|---|---|---|---|---|
+| Trial | Gratis 14 hari | 50 token | ❌ | ❌ |
+| Starter | Rp 99.000/bulan | 300 token | ✅ | ❌ |
+| Business | Rp 249.000/bulan | 1.000 token | ✅ | ✅ |
+
+Token di-reset manual oleh admin. Top-up tersedia via API admin.
+
+---
+
+## 🔧 Admin API
+
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| GET | `/api/admin/user/:nomorWa` | Info user + token |
+| POST | `/api/admin/token/topup` | Top-up token user |
+| POST | `/api/admin/plan/set` | Set plan user |
+
+Contoh top-up:
+```json
+POST /api/admin/token/topup
+{ "nomor_wa": "6282264226680", "jumlah": 100 }
+```
 
 ---
 
@@ -205,20 +232,30 @@ Anomaly detection (plan Basic/Pro)
 User: jual ayam 10 ekor @50000
 Bot:  💰 LAPORAN CFO KASBOT
       Tipe: PEMASUKAN
-      Total Bayar: Rp500.000
       Item:
       - Ayam (10 ekor) — Rp50.000/satuan
+      Total Bayar: Rp500.000
+      🪙 Token tersisa: 49
 
 User: [kirim foto struk Indomaret]
 Bot:  🔍 Sedang membaca struk Anda...
       💸 LAPORAN CFO KASBOT
       Tipe: PENGELUARAN
       Total Bayar: Rp76.300
-      Item:
-      - Indomie Goreng (3 pcs) — Rp3.500/satuan
-      🏷️ Potongan:
-        - Diskon Member: -Rp2.000
+      🏷️ Potongan: Diskon Member -Rp2.000
+      🪙 Token tersisa: 48
 ```
+
+---
+
+## 🔧 Skalabilitas
+
+| Skala | Status | Implementasi |
+|---|---|---|
+| 1–20 user | ✅ Done | PM2 auto-restart, LOG_LEVEL=warn |
+| 20–50 user | ✅ Done | BullMQ + Redis queue, state ke Supabase |
+| 50–100 user | 🔜 Planned | WA Business API, Redis cache, connection pooling |
+| 100+ user | 🔜 Planned | Multi-instance, load balancer, migrate dari Baileys |
 
 ---
 

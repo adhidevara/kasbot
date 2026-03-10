@@ -218,13 +218,20 @@
       </div>
 
       <div class="nav-section">
+        <div class="nav-section-title">Admin · Token</div>
+        <a href="#admin-user" class="nav-item"><span class="nav-method method-get">GET</span>Info User</a>
+        <a href="#admin-topup" class="nav-item"><span class="nav-method method-post">POST</span>Top-up Token</a>
+        <a href="#admin-plan" class="nav-item"><span class="nav-method method-post">POST</span>Set Plan</a>
+      </div>
+
+      <div class="nav-section">
         <div class="nav-section-title">Sistem</div>
         <a href="#stats" class="nav-item"><span class="nav-method method-get">GET</span>Statistik</a>
       </div>
 
     </nav>
     <div class="sidebar-footer">
-      <div class="version-badge">API v1.0 · Nata Engine</div>
+      <div class="version-badge">API v1.0 · Kala Engine</div>
     </div>
   </aside>
 
@@ -233,13 +240,13 @@
     <div class="hero">
       <div class="hero-eyebrow">Dokumentasi API</div>
       <h1 class="hero-title">Nata <em>REST API</em></h1>
-      <p class="hero-desc">Antarmuka pemrograman untuk mengintegrasikan kecerdasan keuangan Nata ke dalam aplikasi Anda. Semua endpoint memerlukan autentikasi JWT kecuali dinyatakan lain.</p>
+      <p class="hero-desc">Antarmuka pemrograman untuk mengintegrasikan Nata ke dalam aplikasi Anda. Semua endpoint memerlukan autentikasi JWT kecuali dinyatakan lain.</p>
       <div class="hero-meta">
         <div class="meta-item"><span class="meta-label">Versi</span><span class="meta-value">v1.0.0</span></div>
         <div class="meta-item"><span class="meta-label">Format</span><span class="meta-value">JSON</span></div>
         <div class="meta-item"><span class="meta-label">Auth</span><span class="meta-value">Bearer JWT</span></div>
         <div class="meta-item"><span class="meta-label">Timezone</span><span class="meta-value">Asia/Jakarta</span></div>
-        <div class="meta-item"><span class="meta-label">Endpoints</span><span class="meta-value">20</span></div>
+        <div class="meta-item"><span class="meta-label">Endpoints</span><span class="meta-value">23</span></div>
       </div>
     </div>
 
@@ -1064,12 +1071,142 @@
         </div>
       </section>
 
+
       <!-- ══════════════════════════════════════════ -->
-      <!-- 07. SISTEM -->
+      <!-- 07. ADMIN · TOKEN MANAGEMENT -->
+      <!-- ══════════════════════════════════════════ -->
+      <section class="section" id="admin-section">
+        <div class="section-header">
+          <span class="section-number">07</span>
+          <h2 class="section-title">Admin · Token</h2>
+        </div>
+
+        <!-- GET /api/admin/user/:nomorWa -->
+        <div class="endpoint" id="admin-user">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/admin/user/:nomorWa</span>
+            <span class="endpoint-desc">Info user + saldo token</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="admin-only">👑 Admin only</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Lihat detail user beserta saldo token dan informasi plan aktif.</p>
+            <div class="sub-label">Path Parameter</div>
+            <table class="field-table">
+              <thead><tr><th>Param</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">nomorWa</td><td class="field-type">string</td><td class="field-desc">Nomor WA tanpa @s.whatsapp.net — contoh: <code style="color:var(--gold)">6282264226680</code></td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'admu-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'admu-200')">✅ 200 OK</button>
+              <button class="tab-btn" onclick="switchTab(this,'admu-404')">❌ 404</button>
+            </div>
+            <div id="admu-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalaproject-prod.up.railway.app/api/admin/user/6282264226680 \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
+            <div id="admu-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
+  <span class="c-blue">"id"</span>: <span class="c-green">"b70de035-4a19-4fdc-840c-7b32c326a407"</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6282264226680@s.whatsapp.net"</span>,
+  <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Z-Score"</span>,
+  <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
+  <span class="c-blue">"token_balance"</span>: <span class="c-orange">49</span>,
+  <span class="c-blue">"token_total"</span>: <span class="c-orange">50</span>,
+  <span class="c-blue">"token_reset_at"</span>: <span class="c-green">"2026-03-10T04:48:47.604717+00:00"</span>,
+  <span class="c-blue">"trial_ends_at"</span>: <span class="c-green">"2026-03-23T22:14:45.238+00:00"</span>
+}</pre></div></div></div>
+            <div id="admu-404" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"error"</span>: <span class="c-green">"User tidak ditemukan"</span> }</pre></div></div></div>
+          </div>
+        </div>
+
+        <!-- POST /api/admin/token/topup -->
+        <div class="endpoint" id="admin-topup">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/admin/token/topup</span>
+            <span class="endpoint-desc">Top-up token user</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="admin-only">👑 Admin only</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Tambahkan token ke saldo user. Token bersifat kumulatif (ditambahkan ke saldo existing).</p>
+            <div class="sub-label">Request Body</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA user — contoh: <code style="color:var(--gold)">6282264226680</code></td></tr>
+                <tr><td class="field-name">jumlah</td><td class="field-type">integer</td><td><span class="field-required">required</span></td><td class="field-desc">Jumlah token yang ditambahkan (harus &gt; 0)</td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'admt-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'admt-200')">✅ 200 OK</button>
+              <button class="tab-btn" onclick="switchTab(this,'admt-400')">❌ 400</button>
+            </div>
+            <div id="admt-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/admin/token/topup \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
+  -H <span class="c-green">"Content-Type: application/json"</span> \
+  -d <span class="c-green">'{ "nomor_wa": "6282264226680", "jumlah": 300 }'</span></pre></div></div></div>
+            <div id="admt-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6282264226680@s.whatsapp.net"</span>,
+  <span class="c-blue">"added"</span>: <span class="c-orange">300</span>,
+  <span class="c-blue">"new_balance"</span>: <span class="c-orange">349</span>
+}</pre></div></div></div>
+            <div id="admt-400" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"error"</span>: <span class="c-green">"nomor_wa dan jumlah (> 0) wajib diisi"</span> }</pre></div></div></div>
+          </div>
+        </div>
+
+        <!-- POST /api/admin/plan/set -->
+        <div class="endpoint" id="admin-plan">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/admin/plan/set</span>
+            <span class="endpoint-desc">Set plan user + reset token</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="admin-only">👑 Admin only</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Set plan user dan reset token sesuai kuota plan. Trial=50, Starter=300, Business=1.000 token.</p>
+            <div class="sub-label">Request Body</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA user — contoh: <code style="color:var(--gold)">6282264226680</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold)">trial</code> · <code style="color:var(--gold)">starter</code> · <code style="color:var(--gold)">business</code></td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'admp-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'admp-200')">✅ 200 OK</button>
+              <button class="tab-btn" onclick="switchTab(this,'admp-400')">❌ 400</button>
+            </div>
+            <div id="admp-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalaproject-prod.up.railway.app/api/admin/plan/set \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
+  -H <span class="c-green">"Content-Type: application/json"</span> \
+  -d <span class="c-green">'{ "nomor_wa": "6282264226680", "plan": "starter" }'</span></pre></div></div></div>
+            <div id="admp-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
+  <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6282264226680@s.whatsapp.net"</span>,
+  <span class="c-blue">"plan"</span>: <span class="c-green">"starter"</span>,
+  <span class="c-blue">"token_balance"</span>: <span class="c-orange">300</span>
+}</pre></div></div></div>
+            <div id="admp-400" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"error"</span>: <span class="c-green">"Plan tidak valid: premium"</span> }</pre></div></div></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- 08. SISTEM -->
       <!-- ══════════════════════════════════════════ -->
       <section class="section" id="stats-section">
         <div class="section-header">
-          <span class="section-number">07</span>
+          <span class="section-number">08</span>
           <h2 class="section-title">Sistem</h2>
         </div>
 
@@ -1094,7 +1231,7 @@
   <span class="c-blue">"users"</span>: {
     <span class="c-blue">"total"</span>: <span class="c-orange">42</span>,
     <span class="c-blue">"aktif_hari_ini"</span>: <span class="c-orange">18</span>,
-    <span class="c-blue">"by_plan"</span>: { <span class="c-blue">"trial"</span>: <span class="c-orange">28</span>, <span class="c-blue">"basic"</span>: <span class="c-orange">12</span>, <span class="c-blue">"pro"</span>: <span class="c-orange">2</span> }
+    <span class="c-blue">"by_plan"</span>: { <span class="c-blue">"trial"</span>: <span class="c-orange">28</span>, <span class="c-blue">"starter"</span>: <span class="c-orange">12</span>, <span class="c-blue">"business"</span>: <span class="c-orange">2</span> }
   },
   <span class="c-blue">"transaksi_hari_ini"</span>: <span class="c-orange">127</span>,
   <span class="c-blue">"wa_status"</span>: <span class="c-green">"connected"</span>,
