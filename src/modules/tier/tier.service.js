@@ -1,4 +1,5 @@
 // src/modules/tier/tier.service.js
+// Plans: trial | starter | business | professional
 import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 import { isUserRegistered, invalidateUserCache } from '../onboarding/onboarding.service.js';
@@ -22,6 +23,13 @@ const PLAN_CONFIG = {
         tokenAwal:            1000,
         fiturAnomali:         true,
         fiturInsightMingguan: true,
+    },
+    professional: {
+        label:                'Professional',
+        tokenAwal:            null, // unlimited — tidak pakai token
+        fiturAnomali:         true,
+        fiturInsightMingguan: true,
+        unlimited:            true,
     },
 };
 
@@ -60,7 +68,8 @@ export async function checkAccess(nomorWa) {
                     `⏰ *Trial Anda sudah berakhir.*\n\n` +
                     `Upgrade ke paket berbayar untuk terus menggunakan KasBot:\n` +
                     `💳 *Starter* — Rp 99.000/bulan (300 token)\n` +
-                    `💳 *Business* — Rp 249.000/bulan (1.000 token)\n\n` +
+                    `💳 *Business* — Rp 249.000/bulan (1.000 token)\n` +
+                    `💳 *Professional* — Token unlimited\n\n` +
                     `Hubungi admin untuk aktivasi.`
             };
         }
@@ -71,7 +80,7 @@ export async function checkAccess(nomorWa) {
         plan,
         config,
         user,
-        tokenBalance: user.token_balance ?? 0,
+        tokenBalance: config.unlimited ? Infinity : (user.token_balance ?? 0),
     };
 }
 
@@ -79,6 +88,19 @@ export async function checkAccess(nomorWa) {
 export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDetik = 0) {
     const access = await checkAccess(nomorWa);
     if (!access.allowed) return access;
+
+    // Professional: unlimited token — selalu allowed
+    if (access.config?.unlimited) {
+        return {
+            allowed:          true,
+            plan:             access.plan,
+            config:           access.config,
+            tokenBalance:     Infinity,
+            tokenDibutuhkan:  0,
+            sisaToken:        Infinity,
+            warningToken:     null,
+        };
+    }
 
     const tokenDibutuhkan = sourceType === 'suara'
         ? hitungTokenAudio(durasiDetik)
@@ -95,7 +117,8 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
                 `🚫 *Token Anda habis.*\n\n` +
                 `Hubungi admin untuk top-up atau upgrade paket:\n` +
                 `💳 *Starter* — Rp 99.000/bulan (300 token)\n` +
-                `💳 *Business* — Rp 249.000/bulan (1.000 token)`
+                `💳 *Business* — Rp 249.000/bulan (1.000 token)\n` +
+                `💳 *Professional* — Token unlimited`
         };
     }
 
@@ -130,7 +153,21 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
 
 // ─── Deduct token setelah transaksi berhasil ──────────────────────────────────
 export async function deductToken(userId, nomorWa, jumlah = 1) {
+    // Skip deduct untuk plan unlimited
+    const access = await checkAccess(nomorWa);
+    if (access.isUnlimited) {
+        logger.verbose(`🪙 Skip deduct (unlimited) | ${nomorWa}`);
+        return { newBalance: Infinity, deducted: 0 };
+    }
+
     try {
+        // Professional: skip deduction
+        const access = await checkAccess(nomorWa);
+        if (access.config?.unlimited) {
+            logger.verbose(`♾️ Professional plan — skip deduct token | ${nomorWa}`);
+            return { newBalance: Infinity, deducted: 0 };
+        }
+
         const { data: user, error } = await db
             .from('pengguna')
             .select('token_balance')
@@ -190,14 +227,20 @@ export async function setPlan(nomorWa, plan) {
     const config = PLAN_CONFIG[plan];
     if (!config) return { success: false, message: `Plan tidak valid: ${plan}` };
 
+    const updateData = {
+        plan,
+        token_reset_at: new Date().toISOString(),
+        updated_at:     new Date().toISOString(),
+    };
+
+    // Professional: set null (unlimited), plan lain set token awal
+    if (config.tokenAwal !== null) {
+        updateData.token_balance = config.tokenAwal;
+        updateData.token_total   = config.tokenAwal;
+    }
+
     await db.from('pengguna')
-        .update({
-            plan,
-            token_balance:  config.tokenAwal,
-            token_total:    config.tokenAwal,
-            token_reset_at: new Date().toISOString(),
-            updated_at:     new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('nomor_wa', nomorWa);
 
     await invalidateUserCache(nomorWa);
@@ -218,16 +261,18 @@ export async function getPlanStatusMessage(nomorWa) {
     const access = await checkAccess(nomorWa);
     if (!access.allowed) return access.message;
 
-    const { plan, config, tokenBalance } = access;
+    const { plan, config, tokenBalance, isUnlimited } = access;
 
     return (
         `📊 *Status Akun Anda*\n\n` +
         `✅ Plan: *${config?.label || plan}*\n` +
-        `🪙 Token tersisa: *${tokenBalance}*\n\n` +
+        `🪙 Token tersisa: *${tokenBalance === Infinity ? 'Unlimited ♾️' : tokenBalance}*\n\n` +
         `_1 teks / 1 foto = 1 token_\n` +
         `_1 voice note = 1 token per 15 detik_\n\n` +
         (plan === 'trial'
-            ? `Upgrade ke Starter (Rp 99rb/bln) atau Business (Rp 249rb/bln).`
-            : `Hubungi admin untuk top-up token.`)
+            ? `Upgrade ke Starter (Rp 99rb/bln), Business (Rp 249rb/bln), atau Professional (unlimited).`
+            : plan === 'professional'
+            ? `Kamu sudah di tier tertinggi. Token unlimited!`
+            : `Hubungi admin untuk top-up token atau upgrade ke Professional.`)
     );
 }

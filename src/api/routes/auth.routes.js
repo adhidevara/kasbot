@@ -7,9 +7,10 @@ import { db } from '../../config/db.js';
 const SALT_ROUNDS = 10;
 
 const PLAN_TOKEN_MAP = {
-    trial:    50,
-    starter:  300,
-    business: 1000,
+    trial:        50,
+    starter:      300,
+    business:     1000,
+    professional: null, // unlimited
 };
 
 export async function authRoutes(fastify) {
@@ -78,27 +79,33 @@ export async function authRoutes(fastify) {
             ? (nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`)
             : null;
 
-        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 50;
+        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 50; // null = professional/unlimited // null = professional unlimited
         const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+        const insertData = {
+            nama,
+            nama_bisnis,
+            email,
+            password_hash,
+            nomor_wa:           nomorFormatted,
+            kategori_bisnis,
+            bahan_baku:         finalBahanBaku,
+            onboarding_selesai: true,
+            plan,
+            trial_ends_at:      trialEnd.toISOString(),
+            token_reset_at:     new Date().toISOString(),
+            updated_at:         new Date().toISOString(),
+        };
+
+        // Professional: token unlimited, tidak perlu set balance
+        if (tokenAwal !== null) {
+            insertData.token_balance = tokenAwal;
+            insertData.token_total   = tokenAwal;
+        }
 
         const { data: user, error } = await db
             .from('pengguna')
-            .insert([{
-                nama,
-                nama_bisnis,
-                email,
-                password_hash,
-                nomor_wa:           nomorFormatted,
-                kategori_bisnis,
-                bahan_baku:         finalBahanBaku,
-                onboarding_selesai: true,
-                plan,
-                trial_ends_at:      trialEnd.toISOString(),
-                token_balance:      tokenAwal,
-                token_total:        tokenAwal,
-                token_reset_at:     new Date().toISOString(),
-                updated_at:         new Date().toISOString(),
-            }])
+            .insert([insertData])
             .select('id, nama, nama_bisnis, email, nomor_wa, kategori_bisnis, plan, token_balance, trial_ends_at')
             .single();
 

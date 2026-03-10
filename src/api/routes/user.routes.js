@@ -143,7 +143,7 @@ export async function userRoutes(fastify) {
         const { nomorWa } = request.params;
         const { plan, trial_ends_at } = request.body || {};
 
-        const validPlans = ['trial', 'starter', 'business'];
+        const validPlans = ['trial', 'starter', 'business', 'professional'];
         if (!plan || !validPlans.includes(plan)) {
             return reply.code(400).send({ success: false, message: `plan harus salah satu dari: ${validPlans.join(', ')}` });
         }

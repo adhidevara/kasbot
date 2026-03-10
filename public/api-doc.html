@@ -423,7 +423,7 @@
             <div id="setp-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalastudio-prod.up.railway.app/api/auth/set-password \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
-  -d <span class="c-green">'{ "email": "ariel@kalastudio.id", "password": "rahasia123" }'</span></pre></div></div></div>
+  -d <span class="c-green">'{ "email": "user@email.com", "password": "rahasia123" }'</span></pre></div></div></div>
             <div id="setp-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Email dan password berhasil diset"</span> }</pre></div></div></div>
             <div id="setp-409" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Email sudah digunakan"</span> }</pre></div></div></div>
           </div>
@@ -617,7 +617,7 @@
             <table class="field-table">
               <thead><tr><th>Parameter</th><th>Tipe</th><th>Default</th><th>Keterangan</th></tr></thead>
               <tbody>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Filter by plan: <code style="color:var(--gold-light)">trial</code> | <code style="color:var(--gold-light)">starter</code> | <code style="color:var(--gold-light)">business</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Filter by plan: <code style="color:var(--gold-light)">trial</code> | <code style="color:var(--gold-light)">starter</code> | <code style="color:var(--gold-light)">business</code> | <code style="color:var(--gold-light)">professional</code></td></tr>
                 <tr><td class="field-name">limit</td><td class="field-type">number</td><td class="field-desc">20</td><td class="field-desc">Maks per halaman</td></tr>
                 <tr><td class="field-name">page</td><td class="field-type">number</td><td class="field-desc">1</td><td class="field-desc">Halaman</td></tr>
               </tbody>
@@ -665,7 +665,7 @@
                 <tr><td class="field-name">nama_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nama usaha</td></tr>
                 <tr><td class="field-name">kategori_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Kuliner, Retail, Jasa, Manufaktur, dll.</td></tr>
                 <tr><td class="field-name">bahan_baku</td><td class="field-type">array</td><td><span class="field-optional">optional</span></td><td class="field-desc">Daftar bahan baku utama. Contoh: <code style="color:var(--gold-light)">["beras","minyak"]</code></td></tr>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Default: <code style="color:var(--gold-light)">trial</code>. Nilai: <code style="color:var(--gold-light)">trial | starter | business</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Default: <code style="color:var(--gold-light)">trial</code>. Nilai: <code style="color:var(--gold-light)">trial | starter | business | professional</code></td></tr>
                 <tr><td class="field-name">trial_ends_at</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">ISO date. Default: 14 hari dari sekarang</td></tr>
               </tbody>
             </table>
@@ -815,7 +815,7 @@
             <table class="field-table">
               <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
               <tbody>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold-light)">trial | starter | business</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold-light)">trial | starter | business | professional</code></td></tr>
                 <tr><td class="field-name">trial_ends_at</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Perpanjang trial. ISO date string</td></tr>
               </tbody>
             </table>
@@ -1327,13 +1327,13 @@
           <div class="endpoint-body">
             <div class="auth-required">🔐 Memerlukan autentikasi</div>
             <div class="admin-only">👑 Admin only</div>
-            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Set plan user dan reset token sesuai kuota plan. Trial=50, Starter=300, Business=1.000 token.</p>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Set plan user dan reset token sesuai kuota plan. Trial=50, Starter=300, Business=1.000, Professional=Unlimited.</p>
             <div class="sub-label">Request Body</div>
             <table class="field-table">
               <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
               <tbody>
                 <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nomor WA user — contoh: <code style="color:var(--gold)">6281234567890</code></td></tr>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold)">trial</code> · <code style="color:var(--gold)">starter</code> · <code style="color:var(--gold)">business</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold)">trial</code> · <code style="color:var(--gold)">starter</code> · <code style="color:var(--gold)">business</code> · <code style="color:var(--gold)">professional</code></td></tr>
               </tbody>
             </table>
             <div class="tabs">
@@ -1387,7 +1387,7 @@
   <span class="c-blue">"users"</span>: {
     <span class="c-blue">"total"</span>: <span class="c-orange">42</span>,
     <span class="c-blue">"aktif_hari_ini"</span>: <span class="c-orange">18</span>,
-    <span class="c-blue">"by_plan"</span>: { <span class="c-blue">"trial"</span>: <span class="c-orange">28</span>, <span class="c-blue">"starter"</span>: <span class="c-orange">12</span>, <span class="c-blue">"business"</span>: <span class="c-orange">2</span> }
+    <span class="c-blue">"by_plan"</span>: { <span class="c-blue">"trial"</span>: <span class="c-orange">28</span>, <span class="c-blue">"starter"</span>: <span class="c-orange">12</span>, <span class="c-blue">"professional"</span>: <span class="c-orange">1</span>, <span class="c-blue">"business"</span>: <span class="c-orange">2</span> }
   },
   <span class="c-blue">"transaksi_hari_ini"</span>: <span class="c-orange">127</span>,
   <span class="c-blue">"wa_status"</span>: <span class="c-green">"connected"</span>,
@@ -1403,7 +1403,7 @@
   </main>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   function switchTab(btn, panelId) {
     const tabGroup = btn.closest('.tabs');
     tabGroup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-req','active-200','active-4xx'));
