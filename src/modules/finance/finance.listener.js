@@ -35,7 +35,8 @@ bus.on('ai.processing_finished', async (payload) => {
                 harga_satuan: item.harga,
                 subtotal:     (item.qty || 0) * (item.harga || 0)
             }));
-            await db.from('detail_transaksi').insert(details);
+            const { error: detailErr } = await db.from('detail_transaksi').insert(details);
+            if (detailErr) throw detailErr;
         }
 
         // 3. Simpan penyesuaian (diskon, pajak, dll)
@@ -47,7 +48,8 @@ bus.on('ai.processing_finished', async (payload) => {
                 nilai:        p.nilai,
                 tipe:         p.tipe
             }));
-            await db.from('penyesuaian_transaksi').insert(adjustments);
+            const { error: adjErr } = await db.from('penyesuaian_transaksi').insert(adjustments);
+            if (adjErr) throw adjErr;
             logger.verbose(`💾 ${adjustments.length} penyesuaian disimpan`);
         }
 

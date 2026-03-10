@@ -1,5 +1,5 @@
 {
-  "watch": ["server.js", "src/"],
+  "watch": ["server.js", "src/", "config/", "package.json", ".env"],
   "ignore": ["auth_info_baileys/*", "node_modules/*"],
   "ext": "js,json"
 }

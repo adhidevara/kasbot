@@ -67,12 +67,18 @@ function formatCFOResponse(result) {
         penyesuaianBaris = baris;
     }
 
+    // Info token sisa
+    const tokenInfo = result.token_sisa != null
+        ? `\n🪙 *Token tersisa:* ${result.token_sisa}`
+        : '';
+
     return (
         `*LAPORAN CFO KASBOT*\n\n` +
         `${emoji} *Tipe:* ${result.tipe.toUpperCase()}\n` +
         `📝 *Item:*\n${items}\n` +
         `${penyesuaianBaris}\n` +
-        `💵 *Total Bayar:* Rp${result.total.toLocaleString('id-ID')}\n\n` +
+        `💵 *Total Bayar:* Rp${result.total.toLocaleString('id-ID')}\n` +
+        `${tokenInfo}\n\n` +
         `_Data berhasil diamankan ke Supabase._`
     );
 }

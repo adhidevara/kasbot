@@ -13,8 +13,18 @@
     "status": "pm2 status",
     "checkM": "node check-models.js",
     "checkDB": "node test-db-mysql.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=tests/unit",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=tests/integration --forceExit",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --forceExit",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch --testPathPatterns=tests/unit",
     "lint": "eslint ."
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "testMatch": ["**/tests/**/*.test.js"],
+    "testTimeout": 15000
   },
   "overrides": {
     "sharp": "0.33.3"

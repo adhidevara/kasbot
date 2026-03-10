@@ -8,13 +8,13 @@ import {
     startOnboarding,
     processOnboarding
 } from '../onboarding/onboarding.service.js';
-import { checkTransaksiLimit } from '../tier/tier.service.js';
+import { checkTransaksiLimit, deductToken } from '../tier/tier.service.js';
 import { isReportCommand, handleReportMenu } from '../report/report.listener.js';
 
 logger.info("👂 AI Listener: Aktif dan menunggu sinyal dari WhatsApp...");
 
 bus.on('whatsapp.message_received', async (payload) => {
-    const { sender, senderAlt, text } = payload;
+    const { sender, senderAlt, text, source_type = 'teks', durasi_detik = 0 } = payload;
     const nomorWa = senderAlt || sender;
 
     logger.verbose(`📨 Pesan dari ${nomorWa}: "${text}"`);
@@ -60,19 +60,17 @@ bus.on('whatsapp.message_received', async (payload) => {
     }
 
     // ─────────────────────────────────────────
-    // STEP 3: CEK TIER / BATAS TRANSAKSI
+    // STEP 3: CEK TOKEN
     // ─────────────────────────────────────────
-    const accessCheck = await checkTransaksiLimit(nomorWa);
+    const accessCheck = await checkTransaksiLimit(nomorWa, source_type, durasi_detik);
     if (!accessCheck.allowed) {
         bus.emit('whatsapp.send_message', { to: sender, text: accessCheck.message });
         return;
     }
 
-    if (accessCheck.plan === 'trial' && accessCheck.sisaHari <= 3) {
-        bus.emit('whatsapp.send_message', {
-            to: sender,
-            text: `⏰ *Reminder:* Trial Anda tersisa *${accessCheck.sisaHari} hari*. Segera upgrade agar data tidak terhenti.`
-        });
+    // Warning token menipis — kirim tapi tetap lanjut proses
+    if (accessCheck.warningToken) {
+        bus.emit('whatsapp.send_message', { to: sender, text: accessCheck.warningToken });
     }
 
     // ─────────────────────────────────────────
@@ -85,7 +83,7 @@ bus.on('whatsapp.message_received', async (payload) => {
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
             aiResult = await processInput(text, {
-                kategori: userProfile.kategori_bisnis || 'Umum',
+                kategori:   userProfile.kategori_bisnis || 'Umum',
                 bahan_baku: userProfile.bahan_baku || []
             });
             break;
@@ -106,7 +104,7 @@ bus.on('whatsapp.message_received', async (payload) => {
         }
     }
 
-    // ─── FIX: Balas user jika AI tidak mengenali transaksi ───────────────────
+    // AI tidak mengenali transaksi — token TIDAK dikurangi
     if (!aiResult || !aiResult.total) {
         logger.warn(`⚠️ AI tidak mengenali transaksi: "${text}"`);
         bus.emit('whatsapp.send_message', {
@@ -124,15 +122,22 @@ bus.on('whatsapp.message_received', async (payload) => {
 
     logger.info("✨ AI Berhasil Ekstraksi:", JSON.stringify(aiResult, null, 2));
 
+    // ─────────────────────────────────────────
+    // STEP 5: DEDUCT TOKEN
+    // ─────────────────────────────────────────
+    await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
+
     bus.emit('ai.processing_finished', {
         ...payload,
         ...aiResult,
         text,
-        user_id: userProfile.id,
-        pengguna_id_alt: nomorWa,
-        remoteJidAlt: senderAlt,
-        source_type: 'whatsapp',
-        kategori_bisnis: userProfile.kategori_bisnis,
-        plan: accessCheck.plan
+        user_id:          userProfile.id,
+        pengguna_id_alt:  nomorWa,
+        remoteJidAlt:     senderAlt,
+        source_type,
+        kategori_bisnis:  userProfile.kategori_bisnis,
+        plan:             accessCheck.plan,
+        token_digunakan:  accessCheck.tokenDibutuhkan,
+        token_sisa:       accessCheck.sisaToken,
     });
 });

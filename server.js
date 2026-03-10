@@ -26,6 +26,7 @@ import { transaksiRoutes } from './src/api/routes/transaksi.routes.js';
 import { laporanRoutes }   from './src/api/routes/laporan.routes.js';
 import { anomaliRoutes }   from './src/api/routes/anomali.routes.js';
 import { statsRoutes }     from './src/api/routes/stats.routes.js';
+import { adminRoutes }     from './src/api/routes/admin.routes.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -48,6 +49,7 @@ await fastify.register(transaksiRoutes, { prefix: '/api/transaksi' });
 await fastify.register(laporanRoutes,   { prefix: '/api/laporan' });
 await fastify.register(anomaliRoutes,   { prefix: '/api/anomali' });
 await fastify.register(statsRoutes,     { prefix: '/api/stats' });
+await fastify.register(adminRoutes,     { prefix: '/api/admin' });
 
 // Global 404
 fastify.setNotFoundHandler((request, reply) => {

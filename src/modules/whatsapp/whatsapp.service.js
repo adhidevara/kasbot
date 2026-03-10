@@ -12,21 +12,20 @@ import logger from '../../shared/logger.js';
 import bus from '../../shared/eventBus.js';
 import { messageQueue } from '../../shared/queue.js';
 
-// ⚠️ Buffer biner (gambar/audio) tidak bisa disimpan di Redis → bypass queue, langsung emit
-
 let sockInstance = null;
-let waStatus = 'disconnected'; // 'connected' | 'disconnected' | 'waiting_qr'
+let waStatus = 'disconnected';
 let currentQR = null;
+
+// ─── Helper: ambil nomor WA asli dari msg.key ─────────────────────────────────
+// Baileys v6+ menyimpan nomor asli di msg.key.remoteJidAlt saat format @lid
+function resolveNomorWa(msgKey) {
+    return msgKey.remoteJidAlt || msgKey.remoteJid;
+}
 
 // ─── Public API ────────────────────────────────────────────────────────────────
 
-export function getWAStatus() {
-    return waStatus;
-}
-
-export function getCurrentQR() {
-    return currentQR;
-}
+export function getWAStatus() { return waStatus; }
+export function getCurrentQR() { return currentQR; }
 
 export async function sendWAMessage(to, text) {
     if (!sockInstance) throw new Error('WhatsApp belum terkoneksi');
@@ -59,7 +58,6 @@ export async function reconnectWA() {
 bus.on('whatsapp.send_message', async ({ to, text }) => {
     try {
         await sendWAMessage(to, text);
-        logger.info(`📤 Pesan terkirim ke ${to}`);
     } catch (err) {
         logger.error('Gagal mengirim pesan WhatsApp:', err.message);
     }
@@ -117,7 +115,6 @@ export async function startWA() {
 
         // ─── Pesan Masuk ───────────────────────────────────────────────────────
         sock.ev.on('messages.upsert', async ({ messages, type: upsertType }) => {
-            // Hanya proses notifikasi baru (bukan history sync)
             if (upsertType !== 'notify') return;
 
             for (const msg of messages) {
@@ -129,7 +126,10 @@ export async function startWA() {
                 if (sender.endsWith('@newsletter')) continue;
                 if (sender.endsWith('@g.us')) continue;
 
-                // Skip pesan lebih dari 30 detik yang lalu
+                // ─── Resolve @lid → nomor WA asli ─────────────────────────────
+                const nomorWa = resolveNomorWa(msg.key);
+                logger.verbose(`📋 sender=${sender} | nomorWa=${nomorWa}`);
+
                 const msgTime = (msg.messageTimestamp || 0) * 1000;
                 if (Date.now() - msgTime > 30_000) {
                     logger.verbose(`⏭️ Skip pesan lama: ${new Date(msgTime).toISOString()}`);
@@ -137,42 +137,43 @@ export async function startWA() {
                 }
 
                 const type = Object.keys(msg.message)[0];
-                logger.verbose(`📋 [${sender}] tipe: ${type}`);
+                logger.verbose(`📋 [${nomorWa}] tipe: ${type}`);
 
-                // ─── TIPE 1: Teks → masuk Redis queue ─────────────────────────
+                // ─── TIPE 1: Teks ──────────────────────────────────────────────
                 if (type === 'conversation' || type === 'extendedTextMessage') {
                     const text = msg.message.conversation
                         || msg.message.extendedTextMessage?.text
                         || '';
                     if (!text) continue;
 
-                    logger.verbose(`🔍 Teks: [${sender}] -> ${text}`);
+                    logger.verbose(`🔍 Teks: [${nomorWa}] -> ${text}`);
 
                     await messageQueue.add('text-message', {
                         type: 'text',
-                        payload: { sender, text, source_type: 'teks' }
+                        payload: {
+                            sender,
+                            senderAlt: nomorWa,
+                            text,
+                            source_type: 'teks'
+                        }
                     });
                     continue;
                 }
 
-                // ─── TIPE 2: Gambar → download langsung, emit buffer ───────────
+                // ─── TIPE 2: Gambar ────────────────────────────────────────────
                 if (type === 'imageMessage') {
                     const caption = msg.message.imageMessage?.caption || '';
-                    logger.verbose(`🖼️ Gambar dari [${sender}]`);
+                    logger.verbose(`🖼️ Gambar dari [${nomorWa}]`);
 
-                    bus.emit('whatsapp.send_message', {
-                        to: sender,
-                        text: '🔍 Sedang membaca struk Anda...'
-                    });
+                    bus.emit('whatsapp.send_message', { to: sender, text: '🔍 Sedang membaca struk Anda...' });
 
                     try {
                         const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
                             logger: pino({ level: 'silent' }),
                             reuploadRequest: sock.updateMediaMessage
                         });
-
                         bus.emit('whatsapp.image_received', {
-                            sender, imageBuffer: buffer, caption, source_type: 'foto'
+                            sender, senderAlt: nomorWa, imageBuffer: buffer, caption, source_type: 'foto'
                         });
                     } catch (err) {
                         logger.error('Gagal download gambar:', err.message);
@@ -184,26 +185,22 @@ export async function startWA() {
                     continue;
                 }
 
-                // ─── TIPE 3: Voice Note → download langsung, emit buffer ───────
+                // ─── TIPE 3: Voice Note ────────────────────────────────────────
                 if (type === 'audioMessage') {
                     const isPtt = msg.message.audioMessage?.ptt;
                     if (!isPtt) continue;
 
-                    logger.verbose(`🎙️ Voice note dari [${sender}]`);
+                    logger.verbose(`🎙️ Voice note dari [${nomorWa}]`);
 
-                    bus.emit('whatsapp.send_message', {
-                        to: sender,
-                        text: '🎙️ Sedang mendengarkan voice note Anda...'
-                    });
+                    bus.emit('whatsapp.send_message', { to: sender, text: '🎙️ Sedang mendengarkan voice note Anda...' });
 
                     try {
                         const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
                             logger: pino({ level: 'silent' }),
                             reuploadRequest: sock.updateMediaMessage
                         });
-
                         bus.emit('whatsapp.audio_received', {
-                            sender, audioBuffer: buffer, source_type: 'suara'
+                            sender, senderAlt: nomorWa, audioBuffer: buffer, source_type: 'suara'
                         });
                     } catch (err) {
                         logger.error('Gagal download audio:', err.message);

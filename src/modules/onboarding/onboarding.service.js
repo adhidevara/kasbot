@@ -217,6 +217,9 @@ export async function processOnboarding(nomorWa, text) {
             onboarding_selesai: true,
             plan: 'trial',
             trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            token_balance: 50,
+            token_total:   50,
+            token_reset_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         }, { onConflict: 'nomor_wa' });
 

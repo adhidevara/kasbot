@@ -64,6 +64,7 @@ function MySQLQueryBuilder(table) {
         table, action: null, data: null, columns: '*',
         wheres: [], orderCol: null, orderAsc: true,
         limitN: null, singleRow: false, conflictCol: null,
+        returning: false, // flag: insert/upsert + .select() → return inserted data
     };
 
     function buildWhere() {
@@ -109,7 +110,11 @@ function MySQLQueryBuilder(table) {
                     );
                     results.push(deserializeRow(row));
                 }
-                return { data: s.singleRow ? results[0] : results, error: null };
+                // .insert().select().single() → return inserted row(s)
+                if (s.returning) {
+                    return { data: s.singleRow ? (results[0] ?? null) : results, error: null };
+                }
+                return { data: null, error: null };
             }
 
             if (s.action === 'upsert') {
@@ -159,7 +164,17 @@ function MySQLQueryBuilder(table) {
     }
 
     const b = {
-        select(cols = '*') { s.action = 'select'; s.columns = cols === '*' ? '*' : cols; return b; },
+        select(cols = '*') {
+            if (s.action === 'insert' || s.action === 'upsert') {
+                // .insert().select() pattern → tetap insert, tapi return data
+                s.returning = true;
+                s.columns = cols === '*' ? '*' : cols;
+            } else {
+                s.action = 'select';
+                s.columns = cols === '*' ? '*' : cols;
+            }
+            return b;
+        },
         insert(data)       { s.action = 'insert'; s.data = Array.isArray(data) ? data : [data]; return b; },
         update(data)       { s.action = 'update'; s.data = data; return b; },
         delete()           { s.action = 'delete'; return b; },
@@ -198,10 +213,22 @@ async function getSupabase() {
     return _supabase;
 }
 
-// Proxy: forward semua method calls ke Supabase builder secara lazy
+// Supabase builder adalah synchronous — chain dulu, execute saat di-await
 function SupabaseQueryBuilder(table) {
-    // builderPromise selalu menyimpan builder/hasil terbaru
-    let builderPromise = getSupabase().then(client => client.from(table));
+    // Antrian method calls yang akan dieksekusi setelah client siap
+    const calls = []; // [{ method, args }]
+
+    async function execute() {
+        const client = await getSupabase();
+        let builder = client.from(table);
+        for (const { method, args } of calls) {
+            if (typeof builder[method] !== 'function') {
+                throw new TypeError(`Supabase builder: method "${method}" tidak tersedia`);
+            }
+            builder = builder[method](...args);
+        }
+        return builder; // PostgrestBuilder — awaitable
+    }
 
     const METHODS = ['select','insert','upsert','update','delete',
                      'eq','neq','gte','lte','gt','lt','in',
@@ -210,17 +237,12 @@ function SupabaseQueryBuilder(table) {
 
     const proxy = new Proxy({}, {
         get(_, prop) {
-            if (prop === 'then')  return (res, rej) => builderPromise.then(res, rej);
-            if (prop === 'catch') return (rej)       => builderPromise.catch(rej);
+            if (prop === 'then')  return (res, rej) => execute().then(r => r).then(res, rej);
+            if (prop === 'catch') return (rej)       => execute().catch(rej);
             if (METHODS.includes(prop)) {
                 return (...args) => {
-                    builderPromise = builderPromise.then(b => {
-                        if (typeof b[prop] !== 'function') {
-                            throw new TypeError(`Supabase builder: method "${prop}" tidak tersedia`);
-                        }
-                        return b[prop](...args);
-                    });
-                    return proxy; // tetap return proxy untuk chaining
+                    calls.push({ method: prop, args });
+                    return proxy;
                 };
             }
             return undefined;
