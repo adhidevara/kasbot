@@ -58,6 +58,9 @@ Ekstrak transaksi dari teks berikut: "${text}"
       - ABAIKAN field: "Tunai", "Total Bayar", "Kembalian", "Cash", "Bayar", "Kembali"
       - Field "Tunai"/"Total Bayar" = uang yang diserahkan pelanggan, BUKAN nilai transaksi
       - Contoh: Total=43000, Tunai=100000, Kembalian=57000 → total yang benar = 43000
+      - Total HARUS dihitung ulang secara mandiri: (Jumlah semua Harga Item * Qty) - Potongan + Tambahan.
+      - JANGAN hanya mengambil angka yang terlihat di teks jika ada perhitungan yang bisa dilakukan.
+      - Jika ada pertentangan antara angka "Total" yang tertulis di teks dengan hasil hitungan manualmu, prioritaskan hasil hitungan manual yang logis.
 
       ATURAN ITEM:
       - Ekstrak semua item dengan nama, qty, harga satuan asli sebelum diskon
