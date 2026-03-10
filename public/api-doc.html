@@ -173,6 +173,8 @@
         <div class="nav-section-title">Autentikasi</div>
         <a href="#auth-login" class="nav-item"><span class="nav-method method-post">POST</span>Login</a>
         <a href="#auth-register" class="nav-item"><span class="nav-method method-post">POST</span>Register</a>
+        <a href="#auth-set-password" class="nav-item"><span class="nav-method method-post">POST</span>Set Password</a>
+        <a href="#auth-change-password" class="nav-item"><span class="nav-method method-post">POST</span>Ganti Password</a>
       </div>
 
       <div class="nav-section">
@@ -247,7 +249,7 @@
         <div class="meta-item"><span class="meta-label">Format</span><span class="meta-value">JSON</span></div>
         <div class="meta-item"><span class="meta-label">Auth</span><span class="meta-value">Bearer JWT</span></div>
         <div class="meta-item"><span class="meta-label">Timezone</span><span class="meta-value">Asia/Jakarta</span></div>
-        <div class="meta-item"><span class="meta-label">Endpoints</span><span class="meta-value">23</span></div>
+        <div class="meta-item"><span class="meta-label">Endpoints</span><span class="meta-value">25</span></div>
       </div>
     </div>
 
@@ -294,11 +296,10 @@
             </div>
             <div id="login-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/auth/login \
   -H <span class="c-green">"Content-Type: application/json"</span> \
-  -H <span class="c-green">"Authorization: Bearer &lt;JWT_TOKEN&gt;"</span> \
   -d <span class="c-green">
   ' // Login dengan email dan password
     {
-      "email": "adhi@example.com",
+      "email": "user@email.com",
       "password": "passwordTersembunyi123"
     }
 
@@ -316,8 +317,8 @@
         <span class="c-blue">"id"</span>: <span class="c-green">"b46ac359-62c8-478a-ad5b-291ed5defdcd"</span>,
         <span class="c-blue">"nama"</span>: <span class="c-green">"Adhi Wijaya"</span>,
         <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Kedai Kopi Digital"</span>,
-        <span class="c-blue">"email"</span>: <span class="c-green">"adhi@example.com"</span>,
-        <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
+        <span class="c-blue">"email"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="28494c4041684d50494558444d064b4745">[email&#160;protected]</a>"</span>,
+        <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ccfafef4fdfefff8f9fafbf4f5fc8cbfe2bba4adb8bfadbcbce2a2a9b8">[email&#160;protected]</a>"</span>,
         <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"F&B"</span>,
         <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
         <span class="c-blue">"token_balance"</span>: <span class="c-orange">50</span>,
@@ -361,7 +362,7 @@
   '{
     "nama": "Adhi Wijaya",
     "nama_bisnis": "Kedai Kopi Digital",
-    "email": "adhi@example.com",
+    "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1a7b7e72735a7f627b776a767f34797577">[email&#160;protected]</a>",
     "password": "passwordTersembunyi123",
     "nomor_wa": "6281234567890",
     "kategori_bisnis": "F&B",
@@ -382,8 +383,8 @@
         <span class="c-blue">"id"</span>: <span class="c-green">"b46ac359-62c8-478a-ad5b-291ed5defdcd"</span>,
         <span class="c-blue">"nama"</span>: <span class="c-green">"Adhi Wijaya"</span>,
         <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Kedai Kopi Digital"</span>,
-        <span class="c-blue">"email"</span>: <span class="c-green">"adhi@example.com"</span>,
-        <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
+        <span class="c-blue">"email"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ceafaaa6a78eabb6afa3bea2abe0ada1a3">[email&#160;protected]</a>"</span>,
+        <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c1f7f3f9f0f3f2f5f4f7f6f9f8f181b2efb6a9a0b5b2a0b1b1efafa4b5">[email&#160;protected]</a>"</span>,
         <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"F&B"</span>,
         <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
         <span class="c-blue">"token_balance"</span>: <span class="c-orange">50</span>,
@@ -391,6 +392,72 @@
     }
 }</pre></div></div></div>
             <div id="register-400" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Data registrasi tidak valid"</span> }</pre></div></div></div>
+          </div>
+        </div>
+
+
+        <!-- POST /api/auth/set-password -->
+        <div class="endpoint" id="auth-set-password">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/auth/set-password</span>
+            <span class="endpoint-desc">Tambah email & password untuk akun WA</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Untuk user yang registrasi via WhatsApp onboarding — tambahkan email dan password agar bisa login via API.</p>
+            <div class="sub-label">Request Body</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">email</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Email baru (harus unik)</td></tr>
+                <tr><td class="field-name">password</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Minimal 6 karakter</td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'setp-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'setp-200')">✅ 200 OK</button>
+              <button class="tab-btn" onclick="switchTab(this,'setp-409')">❌ 409</button>
+            </div>
+            <div id="setp-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalastudio-prod.up.railway.app/api/auth/set-password \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
+  -H <span class="c-green">"Content-Type: application/json"</span> \
+  -d <span class="c-green">'{ "email": "ariel@kalastudio.id", "password": "rahasia123" }'</span></pre></div></div></div>
+            <div id="setp-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Email dan password berhasil diset"</span> }</pre></div></div></div>
+            <div id="setp-409" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Email sudah digunakan"</span> }</pre></div></div></div>
+          </div>
+        </div>
+
+        <!-- POST /api/auth/change-password -->
+        <div class="endpoint" id="auth-change-password">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/auth/change-password</span>
+            <span class="endpoint-desc">Ganti password</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="sub-label">Request Body</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">password_lama</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Password saat ini</td></tr>
+                <tr><td class="field-name">password_baru</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Minimal 6 karakter</td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'chgp-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'chgp-200')">✅ 200 OK</button>
+              <button class="tab-btn" onclick="switchTab(this,'chgp-401')">❌ 401</button>
+            </div>
+            <div id="chgp-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalastudio-prod.up.railway.app/api/auth/change-password \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
+  -H <span class="c-green">"Content-Type: application/json"</span> \
+  -d <span class="c-green">'{ "password_lama": "rahasia123", "password_baru": "baru456" }'</span></pre></div></div></div>
+            <div id="chgp-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Password berhasil diubah"</span> }</pre></div></div></div>
+            <div id="chgp-401" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Password lama salah"</span> }</pre></div></div></div>
           </div>
         </div>
 
@@ -550,7 +617,7 @@
             <table class="field-table">
               <thead><tr><th>Parameter</th><th>Tipe</th><th>Default</th><th>Keterangan</th></tr></thead>
               <tbody>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Filter by plan: <code style="color:var(--gold-light)">trial</code> | <code style="color:var(--gold-light)">basic</code> | <code style="color:var(--gold-light)">pro</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Filter by plan: <code style="color:var(--gold-light)">trial</code> | <code style="color:var(--gold-light)">starter</code> | <code style="color:var(--gold-light)">business</code></td></tr>
                 <tr><td class="field-name">limit</td><td class="field-type">number</td><td class="field-desc">20</td><td class="field-desc">Maks per halaman</td></tr>
                 <tr><td class="field-name">page</td><td class="field-type">number</td><td class="field-desc">1</td><td class="field-desc">Halaman</td></tr>
               </tbody>
@@ -598,7 +665,7 @@
                 <tr><td class="field-name">nama_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nama usaha</td></tr>
                 <tr><td class="field-name">kategori_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Kuliner, Retail, Jasa, Manufaktur, dll.</td></tr>
                 <tr><td class="field-name">bahan_baku</td><td class="field-type">array</td><td><span class="field-optional">optional</span></td><td class="field-desc">Daftar bahan baku utama. Contoh: <code style="color:var(--gold-light)">["beras","minyak"]</code></td></tr>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Default: <code style="color:var(--gold-light)">trial</code>. Nilai: <code style="color:var(--gold-light)">trial | basic | pro</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Default: <code style="color:var(--gold-light)">trial</code>. Nilai: <code style="color:var(--gold-light)">trial | starter | business</code></td></tr>
                 <tr><td class="field-name">trial_ends_at</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">ISO date. Default: 14 hari dari sekarang</td></tr>
               </tbody>
             </table>
@@ -717,19 +784,18 @@
             <div id="upl-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/users/628123456789/plan \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="upl-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
-  <span class="c-blue">"plan"</span>: <span class="c-green">"basic"</span>,
+  <span class="c-blue">"plan"</span>: <span class="c-green">"starter"</span>,
+  <span class="c-blue">"label"</span>: <span class="c-green">"Starter"</span>,
   <span class="c-blue">"trial_ends_at"</span>: <span class="c-orange">null</span>,
-  <span class="c-blue">"kuota"</span>: {
-    <span class="c-blue">"transaksi_bulan_ini"</span>: <span class="c-orange">142</span>,
-    <span class="c-blue">"batas"</span>: <span class="c-orange">300</span>,
-    <span class="c-blue">"sisa"</span>: <span class="c-orange">158</span>
+  <span class="c-blue">"token"</span>: {
+    <span class="c-blue">"balance"</span>: <span class="c-orange">249</span>,
+    <span class="c-blue">"total"</span>: <span class="c-orange">300</span>,
+    <span class="c-blue">"reset_at"</span>: <span class="c-green">"2026-03-10T04:48:47.604Z"</span>
   },
   <span class="c-blue">"fitur"</span>: {
-    <span class="c-blue">"laporan_bulanan"</span>: <span class="c-orange">true</span>,
-    <span class="c-blue">"insight_mingguan"</span>: <span class="c-orange">true</span>,
-    <span class="c-blue">"anomali"</span>: <span class="c-orange">true</span>
-  }
-}</pre></div></div></div>
+    <span class="c-blue">"anomali"</span>: <span class="c-orange">true</span>,
+    <span class="c-blue">"insight_mingguan"</span>: <span class="c-orange">false</span>
+  }</pre></div></div></div>
             <div id="upl-403" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"plan"</span>: <span class="c-green">"trial_expired"</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Trial Anda sudah berakhir."</span> }</pre></div></div></div>
           </div>
         </div>
@@ -749,7 +815,7 @@
             <table class="field-table">
               <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
               <tbody>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold-light)">trial | basic | pro</code></td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc"><code style="color:var(--gold-light)">trial | starter | business</code></td></tr>
                 <tr><td class="field-name">trial_ends_at</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Perpanjang trial. ISO date string</td></tr>
               </tbody>
             </table>
@@ -1199,7 +1265,7 @@
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="admu-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"id"</span>: <span class="c-green">"b70de035-4a19-4fdc-840c-7b32c326a407"</span>,
-  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1c2a2e242d2e2f28292a2b24252c5c6f326b747d686f7d6c6c32727968">[email&#160;protected]</a>"</span>,
   <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Z-Score"</span>,
   <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
   <span class="c-blue">"token_balance"</span>: <span class="c-orange">49</span>,
@@ -1242,7 +1308,7 @@
   -d <span class="c-green">'{ "nomor_wa": "6281234567890", "jumlah": 300 }'</span></pre></div></div></div>
             <div id="admt-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
-  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bd8b8f858c8f8e89888b8a85848dfdce93cad5dcc9cedccdcd93d3d8c9">[email&#160;protected]</a>"</span>,
   <span class="c-blue">"added"</span>: <span class="c-orange">300</span>,
   <span class="c-blue">"new_balance"</span>: <span class="c-orange">349</span>
 }</pre></div></div></div>
@@ -1281,7 +1347,7 @@
   -d <span class="c-green">'{ "nomor_wa": "6281234567890", "plan": "starter" }'</span></pre></div></div></div>
             <div id="admp-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
-  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
+  <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3204000a030001060704050a0b0272411c455a5346415342421c5c5746">[email&#160;protected]</a>"</span>,
   <span class="c-blue">"plan"</span>: <span class="c-green">"starter"</span>,
   <span class="c-blue">"token_balance"</span>: <span class="c-orange">300</span>
 }</pre></div></div></div>
@@ -1337,7 +1403,7 @@
   </main>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   function switchTab(btn, panelId) {
     const tabGroup = btn.closest('.tabs');
     tabGroup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-req','active-200','active-4xx'));
@@ -1366,7 +1432,6 @@
   const sections = document.querySelectorAll('.endpoint');
   const navItems = document.querySelectorAll('.nav-item');
 
-  // Set initial active ke item pertama
   if (navItems.length) navItems[0].classList.add('active');
 
   window.addEventListener('scroll', () => {
