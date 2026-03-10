@@ -54,13 +54,11 @@ Ekstrak transaksi dari teks berikut: "${text}"
       - Default jika tidak jelas = pengeluaran
 
       ATURAN TOTAL (PENTING):
-      - Gunakan field "Total" atau "Subtotal" = harga barang yang dibeli
-      - ABAIKAN field: "Tunai", "Total Bayar", "Kembalian", "Cash", "Bayar", "Kembali"
-      - Field "Tunai"/"Total Bayar" = uang yang diserahkan pelanggan, BUKAN nilai transaksi
-      - Contoh: Total=43000, Tunai=100000, Kembalian=57000 → total yang benar = 43000
-      - Total HARUS dihitung ulang secara mandiri: (Jumlah semua Harga Item * Qty) - Potongan + Tambahan.
-      - JANGAN hanya mengambil angka yang terlihat di teks jika ada perhitungan yang bisa dilakukan.
-      - Jika ada pertentangan antara angka "Total" yang tertulis di teks dengan hasil hitungan manualmu, prioritaskan hasil hitungan manual yang logis.
+      - Hitung total = jumlah semua item (qty × harga) - potongan + tambahan
+      - Contoh: 3×5000 + 2×120000 - diskon 10000 + ongkir 15000 = 260000
+      - Untuk struk: ABAIKAN field "Tunai", "Cash", "Kembalian" — itu uang yang diserahkan pelanggan, BUKAN total transaksi
+      - Contoh struk: Total=43000, Tunai=100000, Kembalian=57000 → total yang benar = 43000
+      - Jangan gunakan nominal uang yang diserahkan (misalnya "bayar pake duit 300rb") sebagai total
 
       ATURAN ITEM:
       - Ekstrak semua item dengan nama, qty, harga satuan asli sebelum diskon
