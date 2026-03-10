@@ -172,6 +172,7 @@
       <div class="nav-section">
         <div class="nav-section-title">Autentikasi</div>
         <a href="#auth-login" class="nav-item"><span class="nav-method method-post">POST</span>Login</a>
+        <a href="#auth-register" class="nav-item"><span class="nav-method method-post">POST</span>Register</a>
       </div>
 
       <div class="nav-section">
@@ -268,20 +269,22 @@
           <h2 class="section-title">Autentikasi</h2>
         </div>
 
-        <div class="endpoint open" id="auth-login">
+        <div class="endpoint" id="auth-login">
           <div class="endpoint-header" onclick="toggleEndpoint(this)">
             <span class="method-badge badge-post">POST</span>
             <span class="endpoint-path">/api/auth/login</span>
-            <span class="endpoint-desc">Login admin, return JWT 7 hari</span>
+            <span class="endpoint-desc">Login user, return JWT 7 hari</span>
             <span class="endpoint-toggle">▾</span>
           </div>
           <div class="endpoint-body">
-            <div class="info-box info"><span class="info-icon">ℹ</span><span>Tidak memerlukan password. Identitas diverifikasi melalui kepemilikan nomor WhatsApp. User harus sudah terdaftar.</span></div>
+            <div class="info-box info"><span class="info-icon">ℹ</span><span>Memerlukan password. Identitas diverifikasi melalui kepemilikan nomor WhatsApp atau email. User harus sudah terdaftar.</span></div>
             <div class="sub-label">Request Body</div>
             <table class="field-table">
               <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
               <tbody>
                 <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Format internasional tanpa +. Contoh: <code style="color:var(--gold-light)">628123456789</code></td></tr>
+                <tr><td class="field-name">email</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Alamat email pengguna</td></tr>
+                <tr><td class="field-name">password</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Password untuk autentikasi</td></tr>
               </tbody>
             </table>
             <div class="tabs">
@@ -291,19 +294,106 @@
             </div>
             <div id="login-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/auth/login \
   -H <span class="c-green">"Content-Type: application/json"</span> \
-  -d <span class="c-green">'{"nomor_wa": "628123456789"}'</span></pre></div></div></div>
+  -H <span class="c-green">"Authorization: Bearer &lt;JWT_TOKEN&gt;"</span> \
+  -d <span class="c-green">
+  ' // Login dengan email dan password
+    {
+      "email": "adhi@example.com",
+      "password": "passwordTersembunyi123"
+    }
+
+    // Atau login dengan nomor WA dan password
+    // {
+    //  "nomor_wa": "628123456789",
+    //  "password": "passwordAman123"
+    // }'
+</span></pre></div></div></div>
             <div id="login-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
-  <span class="c-blue">"token"</span>: <span class="c-green">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
-  <span class="c-blue">"expires_in"</span>: <span class="c-orange">604800</span>,
-  <span class="c-blue">"user"</span>: {
-    <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"628123456789"</span>,
-    <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Warung Pak Anto"</span>,
-    <span class="c-blue">"plan"</span>: <span class="c-green">"basic"</span>
-  }
+    <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+    <span class="c-blue">"token"</span>: <span class="c-green">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImI0NmFjMzU5LTYyYzgtNDc4YS1hZDViLTI5MWVkNWRlZmRjZCIsImVtYWlsIjoiYWRoaUBleGFtcGxlLmNvbSIsIm5vbW9yX3dhIjoiNjI4MTIzNDU2Nzg5MEBzLndoYXRzYXBwLm5ldCIsInBsYW4iOiJ0cmlhbCIsImlhdCI6MTc3MzEyNTMzNywiZXhwIjoxNzczNzMwMTM3fQ.v7TvrgKFmSgt1_1mSJhTcSGKbbAuE3hKee1I-LGL4KA"</span>,
+    <span class="c-blue">"expires_in"</span>: <span class="c-orange">604800</span>,
+    <span class="c-blue">"user"</span>: {
+        <span class="c-blue">"id"</span>: <span class="c-green">"b46ac359-62c8-478a-ad5b-291ed5defdcd"</span>,
+        <span class="c-blue">"nama"</span>: <span class="c-green">"Adhi Wijaya"</span>,
+        <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Kedai Kopi Digital"</span>,
+        <span class="c-blue">"email"</span>: <span class="c-green">"adhi@example.com"</span>,
+        <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
+        <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"F&B"</span>,
+        <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
+        <span class="c-blue">"token_balance"</span>: <span class="c-orange">50</span>,
+        <span class="c-blue">"trial_ends_at"</span>: <span class="c-green">"2026-03-24T06:46:38.441+00:00"</span>
+    }
 }</pre></div></div></div>
-            <div id="login-404" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Nomor WA tidak terdaftar"</span> }</pre></div></div></div>
+            <div id="login-404" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Email atau nomor WA tidak terdaftar"</span> }</pre></div></div></div>
           </div>
         </div>
+
+        <div class="endpoint" id="auth-register">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-post">POST</span>
+            <span class="endpoint-path">/api/auth/register</span>
+            <span class="endpoint-desc">Register user, Get JWT 7 hari</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="info-box info"><span class="info-icon">ℹ</span><span>Pendaftaran akun user.</span></div>
+            <div class="sub-label">Request Body</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">nama</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nama pengguna</td></tr>
+                <tr><td class="field-name">nama_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nama Bisnis pengguna</td></tr>
+                <tr><td class="field-name">email</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Alamat email pengguna</td></tr>
+                <tr><td class="field-name">password</td><td class="field-type">string (Bcrypt)</td><td><span class="field-required">required</span></td><td class="field-desc">Password untuk autentikasi</td></tr>
+                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Format internasional tanpa +. Contoh: <code style="color:var(--gold-light)">628123456789</code></td></tr>
+                <tr><td class="field-name">bahan_baku</td><td class="field-type">Array</td><td><span class="field-required">required</span></td><td class="field-desc">Jenis bahan baku yang digunakan</td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Plan yang dipilih, Default : "trial"</td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'register-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'register-200')">✅ 200 OK</button>
+              <button class="tab-btn" onclick="switchTab(this,'register-400')">❌ 400 Bad Request</button>
+            </div>
+            <div id="register-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/auth/register \
+  -H <span class="c-green">"Content-Type: application/json"</span> \
+  -d <span class="c-green">
+  '{
+    "nama": "Adhi Wijaya",
+    "nama_bisnis": "Kedai Kopi Digital",
+    "email": "adhi@example.com",
+    "password": "passwordTersembunyi123",
+    "nomor_wa": "6281234567890",
+    "kategori_bisnis": "F&B",
+    "bahan_baku": [
+      "Biji Kopi Arabika",
+      "Susu UHT",
+      "Gula Aren"
+    ],
+    "plan": "trial"
+  }'
+</span></pre></div></div></div>
+            <div id="register-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
+    <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
+    <span class="c-blue">"message"</span>: <span class="c-green">"Registrasi berhasil"</span>,
+    <span class="c-blue">"token"</span>: <span class="c-green">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImI0NmFjMzU5LTYyYzgtNDc4YS1hZDViLTI5MWVkNWRlZmRjZCIsImVtYWlsIjoiYWRoaUBleGFtcGxlLmNvbSIsIm5vbW9yX3dhIjoiNjI4MTIzNDU2Nzg5MEBzLndoYXRzYXBwLm5ldCIsInBsYW4iOiJ0cmlhbCIsImlhdCI6MTc3MzEyNTE5OCwiZXhwIjoxNzczNzI5OTk4fQ.jt0OEAK9nrbl_XGsVYB9z3nGGCrbsPATCUl-vpGBzvU"</span>,
+    <span class="c-blue">"expires_in"</span>: <span class="c-orange">604800</span>,
+    <span class="c-blue">"user"</span>: {
+        <span class="c-blue">"id"</span>: <span class="c-green">"b46ac359-62c8-478a-ad5b-291ed5defdcd"</span>,
+        <span class="c-blue">"nama"</span>: <span class="c-green">"Adhi Wijaya"</span>,
+        <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Kedai Kopi Digital"</span>,
+        <span class="c-blue">"email"</span>: <span class="c-green">"adhi@example.com"</span>,
+        <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"6281234567890@s.whatsapp.net"</span>,
+        <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"F&B"</span>,
+        <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
+        <span class="c-blue">"token_balance"</span>: <span class="c-orange">50</span>,
+        <span class="c-blue">"trial_ends_at"</span>: <span class="c-green">"2026-03-24T06:46:38.441+00:00"</span>
+    }
+}</pre></div></div></div>
+            <div id="register-400" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Data registrasi tidak valid"</span> }</pre></div></div></div>
+          </div>
+        </div>
+
       </section>
 
       <!-- ══════════════════════════════════════════ -->
