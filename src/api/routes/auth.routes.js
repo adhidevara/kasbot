@@ -7,7 +7,7 @@ import { db } from '../../config/db.js';
 const SALT_ROUNDS = 10;
 
 const PLAN_TOKEN_MAP = {
-    trial:        50,
+    trial:        15,
     starter:      300,
     business:     1000,
     professional: null, // unlimited
@@ -79,8 +79,8 @@ export async function authRoutes(fastify) {
             ? (nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`)
             : null;
 
-        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 50; // null = professional/unlimited // null = professional unlimited
-        const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 15; // null = professional unlimited
+        const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
         const insertData = {
             nama,
@@ -125,15 +125,15 @@ export async function authRoutes(fastify) {
             message: 'Registrasi berhasil',
             token,
             user: {
-                id:            user.id,
-                nama:          user.nama,
-                nama_bisnis:   user.nama_bisnis,
-                email:         user.email,
-                nomor_wa:      user.nomor_wa,
+                id:              user.id,
+                nama:            user.nama,
+                nama_bisnis:     user.nama_bisnis,
+                email:           user.email,
+                nomor_wa:        user.nomor_wa,
                 kategori_bisnis: user.kategori_bisnis,
-                plan:          user.plan,
-                token_balance: user.token_balance,
-                trial_ends_at: user.trial_ends_at,
+                plan:            user.plan,
+                token_balance:   user.token_balance,
+                trial_ends_at:   user.trial_ends_at,
             },
         });
     });
@@ -203,7 +203,7 @@ export async function authRoutes(fastify) {
                 nomor_wa:       user.nomor_wa,
                 kategori_bisnis: user.kategori_bisnis,
                 plan:           user.plan,
-                token_balance:  user.token_balance ?? 0,
+                token_balance:  user.plan === 'professional' ? null : (user.token_balance ?? 0),
                 trial_ends_at:  user.trial_ends_at,
             },
         });
@@ -236,11 +236,14 @@ export async function authRoutes(fastify) {
 
         const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
 
-        await db.from('pengguna')
-            .update({ email, password_hash, updated_at: new Date().toISOString() })
-            .eq('nomor_wa', nomor_wa);
+        // Update by nomor_wa atau id (support user tanpa nomor_wa)
+        const { id: userId, nomor_wa: userNomor } = request.user;
+        let updateQ = db.from('pengguna').update({ email, password_hash, updated_at: new Date().toISOString() });
+        if (userId) updateQ = updateQ.eq('id', userId);
+        else if (userNomor) updateQ = updateQ.eq('nomor_wa', userNomor);
+        await updateQ;
 
-        await invalidateUserCache(nomor_wa);
+        if (userNomor) await invalidateUserCache(userNomor);
 
         return reply.send({ success: true, message: 'Email dan password berhasil diset' });
     });
@@ -258,8 +261,14 @@ export async function authRoutes(fastify) {
             return reply.code(400).send({ success: false, message: 'Password baru minimal 6 karakter' });
         }
 
+        const userId = request.user?.id;
+        if (!userId && !nomor_wa && !email) {
+            return reply.code(400).send({ success: false, message: 'Tidak dapat mengidentifikasi akun' });
+        }
+
         let query = db.from('pengguna').select('password_hash');
-        if (nomor_wa) query = query.eq('nomor_wa', nomor_wa);
+        if (userId) query = query.eq('id', userId);
+        else if (nomor_wa) query = query.eq('nomor_wa', nomor_wa);
         else query = query.eq('email', email);
 
         const { data: user } = await query.single();
@@ -276,7 +285,8 @@ export async function authRoutes(fastify) {
         const password_hash = await bcrypt.hash(password_baru, SALT_ROUNDS);
 
         let updateQuery = db.from('pengguna').update({ password_hash, updated_at: new Date().toISOString() });
-        if (nomor_wa) updateQuery = updateQuery.eq('nomor_wa', nomor_wa);
+        if (userId) updateQuery = updateQuery.eq('id', userId);
+        else if (nomor_wa) updateQuery = updateQuery.eq('nomor_wa', nomor_wa);
         else updateQuery = updateQuery.eq('email', email);
 
         await updateQuery;
