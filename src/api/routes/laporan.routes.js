@@ -10,6 +10,12 @@ function normalizeNomorWa(n) {
     return `${n}@s.whatsapp.net`;
 }
 
+function checkOwnership(requestUser, targetUser) {
+    if (requestUser?.id && requestUser.id === targetUser.id) return true;
+    if (requestUser?.nomor_wa && requestUser.nomor_wa === targetUser.nomor_wa) return true;
+    return false;
+}
+
 export async function laporanRoutes(fastify) {
 
     // GET /api/laporan/:nomorWa/harian
@@ -17,6 +23,7 @@ export async function laporanRoutes(fastify) {
         const { nomorWa } = request.params;
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+        if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
 
         const laporan = await generateLaporan(user.id, 'harian');
         return reply.send(laporan);
@@ -27,6 +34,7 @@ export async function laporanRoutes(fastify) {
         const { nomorWa } = request.params;
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+        if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
 
         const laporan = await generateLaporan(user.id, 'mingguan');
         return reply.send(laporan);
@@ -37,6 +45,7 @@ export async function laporanRoutes(fastify) {
         const { nomorWa } = request.params;
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+        if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
 
         const boleh = await checkFitur(normalizeNomorWa(nomorWa), 'fiturInsightMingguan');
         if (!boleh) {
@@ -55,6 +64,7 @@ export async function laporanRoutes(fastify) {
         const { nomorWa } = request.params;
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+        if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
 
         const HARI = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
@@ -95,6 +105,7 @@ export async function laporanRoutes(fastify) {
 
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+        if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
 
         const target = bulan ? new Date(bulan + '-01') : new Date();
         const year   = target.getFullYear();

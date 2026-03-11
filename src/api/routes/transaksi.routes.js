@@ -10,6 +10,14 @@ function normalizeNomorWa(nomorWa) {
     return `${nomorWa}@s.whatsapp.net`;
 }
 
+// ─── Helper: ownership check ─────────────────────────────────────────────────
+// Pastikan user yang request adalah pemilik data (cocokkan JWT id atau nomor_wa)
+function checkOwnership(requestUser, targetUser) {
+    if (requestUser.id && requestUser.id === targetUser.id) return true;
+    if (requestUser.nomor_wa && requestUser.nomor_wa === targetUser.nomor_wa) return true;
+    return false;
+}
+
 export async function transaksiRoutes(fastify) {
 
     // GET /api/transaksi/:nomorWa — list dengan filter & paginasi
@@ -20,22 +28,40 @@ export async function transaksiRoutes(fastify) {
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
-        let query = db.from('transaksi')
-            .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
-            .eq('pengguna_id', user.id)
-            .order('transaksi_at', { ascending: false })
-            .limit(Number(limit));
+        // Ownership check
+        if (!checkOwnership(request.user, user)) {
+            return reply.code(403).send({ success: false, message: 'Akses ditolak' });
+        }
 
-        if (tipe) query = query.eq('tipe', tipe);
-        if (dari) query = query.gte('transaksi_at', `${dari} 00:00:00`);
-        if (sampai) query = query.lte('transaksi_at', `${sampai} 23:59:59`);
+        const limitNum  = Number(limit);
+        const pageNum   = Number(page);
+        const offset    = (pageNum - 1) * limitNum;
 
-        const { data, error } = await query;
+        // Query data + count paralel
+        let baseQuery = db.from('transaksi').eq('pengguna_id', user.id);
+        if (tipe)   baseQuery = baseQuery.eq('tipe', tipe);
+        if (dari)   baseQuery = baseQuery.gte('transaksi_at', `${dari} 00:00:00`);
+        if (sampai) baseQuery = baseQuery.lte('transaksi_at', `${sampai} 23:59:59`);
+
+        const [{ data, error }, { count }] = await Promise.all([
+            baseQuery
+                .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
+                .order('transaksi_at', { ascending: false })
+                .range(offset, offset + limitNum - 1),
+            baseQuery
+                .select('*', { count: 'exact', head: true }),
+        ]);
+
         if (error) return reply.code(500).send({ success: false, message: error.message });
 
         return reply.send({
             data,
-            pagination: { page: Number(page), limit: Number(limit), total: data.length },
+            pagination: {
+                page:        pageNum,
+                limit:       limitNum,
+                total:       count ?? 0,
+                total_pages: Math.ceil((count ?? 0) / limitNum),
+            },
         });
     });
 
@@ -48,20 +74,32 @@ export async function transaksiRoutes(fastify) {
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
-        // 1. Ambil list transaksi
-        let query = db.from('transaksi')
-            .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
-            .eq('pengguna_id', user.id)
-            .order('transaksi_at', { ascending: false })
-            .limit(Number(limit));
+        // Ownership check
+        if (!checkOwnership(request.user, user)) {
+            return reply.code(403).send({ success: false, message: 'Akses ditolak' });
+        }
 
-        if (tipe)   query = query.eq('tipe', tipe);
-        if (dari)   query = query.gte('transaksi_at', `${dari} 00:00:00`);
-        if (sampai) query = query.lte('transaksi_at', `${sampai} 23:59:59`);
+        const limitNum = Number(limit);
+        const pageNum  = Number(page);
+        const offset   = (pageNum - 1) * limitNum;
 
-        const { data: transaksiList, error } = await query;
+        // 1. Ambil list transaksi + count paralel
+        let baseQuery = db.from('transaksi').eq('pengguna_id', user.id);
+        if (tipe)   baseQuery = baseQuery.eq('tipe', tipe);
+        if (dari)   baseQuery = baseQuery.gte('transaksi_at', `${dari} 00:00:00`);
+        if (sampai) baseQuery = baseQuery.lte('transaksi_at', `${sampai} 23:59:59`);
+
+        const [{ data: transaksiList, error }, { count }] = await Promise.all([
+            baseQuery
+                .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
+                .order('transaksi_at', { ascending: false })
+                .range(offset, offset + limitNum - 1),
+            baseQuery
+                .select('*', { count: 'exact', head: true }),
+        ]);
+
         if (error) return reply.code(500).send({ success: false, message: error.message });
-        if (!transaksiList.length) return reply.send({ data: [], pagination: { page: Number(page), limit: Number(limit), total: 0 } });
+        if (!transaksiList.length) return reply.send({ data: [], pagination: { page: pageNum, limit: limitNum, total: count ?? 0, total_pages: Math.ceil((count ?? 0) / limitNum) } });
 
         // 2. Ambil semua items & penyesuaian sekaligus (batch, bukan N+1)
         const ids = transaksiList.map(t => t.id);
@@ -96,7 +134,12 @@ export async function transaksiRoutes(fastify) {
 
         return reply.send({
             data,
-            pagination: { page: Number(page), limit: Number(limit), total: data.length },
+            pagination: {
+                page:        pageNum,
+                limit:       limitNum,
+                total:       count ?? 0,
+                total_pages: Math.ceil((count ?? 0) / limitNum),
+            },
         });
     });
 
@@ -106,6 +149,10 @@ export async function transaksiRoutes(fastify) {
 
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+
+        if (!checkOwnership(request.user, user)) {
+            return reply.code(403).send({ success: false, message: 'Akses ditolak' });
+        }
 
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -142,6 +189,10 @@ export async function transaksiRoutes(fastify) {
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
+        if (!checkOwnership(request.user, user)) {
+            return reply.code(403).send({ success: false, message: 'Akses ditolak' });
+        }
+
         const { data: trx, error: e1 } = await db.from('transaksi')
             .select('*').eq('id', id).eq('pengguna_id', user.id).single();
 
@@ -169,6 +220,10 @@ export async function transaksiRoutes(fastify) {
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
+        if (!checkOwnership(request.user, user)) {
+            return reply.code(403).send({ success: false, message: 'Akses ditolak' });
+        }
+
         const allowedFields = ['total', 'tipe', 'deskripsi', 'kategori', 'transaksi_at'];
         const updateData = {};
         for (const field of allowedFields) {
@@ -195,6 +250,10 @@ export async function transaksiRoutes(fastify) {
 
         const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+
+        if (!checkOwnership(request.user, user)) {
+            return reply.code(403).send({ success: false, message: 'Akses ditolak' });
+        }
 
         const { data: trx } = await db.from('transaksi').select('id').eq('id', id).eq('pengguna_id', user.id).single();
         if (!trx) return reply.code(404).send({ success: false, message: 'Transaksi tidak ditemukan' });

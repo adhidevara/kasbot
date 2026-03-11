@@ -8,22 +8,43 @@ import {
 } from '../../modules/onboarding/onboarding.service.js';
 import { checkAccess, getPlanStatusMessage } from '../../modules/tier/tier.service.js';
 
+function normalizeNomorWa(n) {
+    if (!n || n.includes('@')) return n;
+    return `${n}@s.whatsapp.net`;
+}
+
+function checkOwnership(requestUser, targetUser) {
+    if (requestUser?.id && requestUser.id === targetUser.id) return true;
+    if (requestUser?.nomor_wa && requestUser.nomor_wa === targetUser.nomor_wa) return true;
+    return false;
+}
+
 export async function userRoutes(fastify) {
 
     // GET /api/users — list semua pengguna (admin)
     fastify.get('/', { preHandler: [verifyToken, verifyAdmin] }, async (request, reply) => {
         const { plan, limit = 20, page = 1 } = request.query;
-        const offset = (page - 1) * limit;
+        const limitNum = Number(limit);
+        const pageNum  = Number(page);
+        const offset   = (pageNum - 1) * limitNum;
 
-        let query = db.from('pengguna').select('id, nomor_wa, nama_bisnis, kategori_bisnis, plan, trial_ends_at, onboarding_selesai, created_at');
-        if (plan) query = query.eq('plan', plan);
+        let baseQuery = db.from('pengguna');
+        if (plan) baseQuery = baseQuery.eq('plan', plan);
 
-        const { data, error } = await query.order('created_at', { ascending: false }).limit(Number(limit));
+        const [{ data, error }, { count }] = await Promise.all([
+            baseQuery
+                .select('id, nomor_wa, nama_bisnis, kategori_bisnis, plan, trial_ends_at, onboarding_selesai, created_at')
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limitNum - 1),
+            baseQuery
+                .select('*', { count: 'exact', head: true }),
+        ]);
+
         if (error) return reply.code(500).send({ success: false, message: error.message });
 
         return reply.send({
             data,
-            pagination: { page: Number(page), limit: Number(limit), total: data.length },
+            pagination: { page: pageNum, limit: limitNum, total: count ?? 0, total_pages: Math.ceil((count ?? 0) / limitNum) },
         });
     });
 
@@ -43,12 +64,12 @@ export async function userRoutes(fastify) {
 
         const trialEnd = trial_ends_at
             ? new Date(trial_ends_at)
-            : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-        const PLAN_TOKEN_MAP = { trial: 50, starter: 300, business: 1000 };
-        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 50;
+        const PLAN_TOKEN_MAP = { trial: 15, starter: 300, business: 1000, professional: null };
+        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 15;
 
-        const { data, error } = await db.from('pengguna').insert([{
+        const insertData = {
             nomor_wa,
             nama_bisnis,
             kategori_bisnis,
@@ -56,11 +77,15 @@ export async function userRoutes(fastify) {
             onboarding_selesai: true,
             plan,
             trial_ends_at:  trialEnd.toISOString(),
-            token_balance:  tokenAwal,
-            token_total:    tokenAwal,
             token_reset_at: new Date().toISOString(),
             updated_at:     new Date().toISOString(),
-        }])
+        };
+        if (tokenAwal !== null) {
+            insertData.token_balance = tokenAwal;
+            insertData.token_total   = tokenAwal;
+        }
+
+        const { data, error } = await db.from('pengguna').insert([insertData])
         .select('*')
         .single();
 
@@ -81,14 +106,19 @@ export async function userRoutes(fastify) {
     // GET /api/users/:nomorWa — profil pengguna
     fastify.get('/:nomorWa', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa } = request.params;
-        const user = await getUserProfile(nomorWa);
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+        if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
         return reply.send(user);
     });
 
     // PATCH /api/users/:nomorWa — update profil
     fastify.patch('/:nomorWa', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa } = request.params;
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
+        if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+        if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
+
         const allowedFields = ['nama_bisnis', 'kategori_bisnis', 'bahan_baku', 'threshold_alert'];
         const updateData = {};
         for (const field of allowedFields) {
@@ -173,7 +203,7 @@ export async function userRoutes(fastify) {
         const { nomorWa } = request.params;
 
         // Cek ada
-        const user = await getUserProfile(nomorWa);
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
         // Hapus cascade via FK — cukup hapus pengguna

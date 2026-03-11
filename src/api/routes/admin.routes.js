@@ -3,13 +3,14 @@
 // Protected by JWT middleware
 
 import { topUpToken, setPlan } from '../../modules/tier/tier.service.js';
+import { verifyToken, verifyAdmin } from '../middleware/auth.middleware.js';
 import { isUserRegistered } from '../../modules/onboarding/onboarding.service.js';
 
 export async function adminRoutes(fastify) {
 
     // ─── GET /admin/user/:nomorWa ─────────────────────────────────────────────
     // Lihat info user + token
-    fastify.get('/user/:nomorWa', async (req, reply) => {
+    fastify.get('/user/:nomorWa', { preHandler: [verifyToken, verifyAdmin] }, async (req, reply) => {
         const { nomorWa } = req.params;
         const nomorFormatted = nomorWa.includes('@') ? nomorWa : `${nomorWa}@s.whatsapp.net`;
 
@@ -30,7 +31,7 @@ export async function adminRoutes(fastify) {
 
     // ─── POST /admin/token/topup ──────────────────────────────────────────────
     // Body: { nomor_wa: "6282...", jumlah: 100 }
-    fastify.post('/token/topup', async (req, reply) => {
+    fastify.post('/token/topup', { preHandler: [verifyToken, verifyAdmin] }, async (req, reply) => {
         const { nomor_wa, jumlah } = req.body || {};
 
         if (!nomor_wa || !jumlah || jumlah <= 0) {
@@ -38,6 +39,14 @@ export async function adminRoutes(fastify) {
         }
 
         const nomorFormatted = nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`;
+
+        // Cek plan professional — unlimited, tidak perlu topup
+        const userCheck = await isUserRegistered(nomorFormatted);
+        if (!userCheck) return reply.code(404).send({ error: 'User tidak ditemukan' });
+        if (userCheck.plan === 'professional') {
+            return reply.code(400).send({ error: 'Plan Professional unlimited, tidak perlu topup token' });
+        }
+
         const result = await topUpToken(nomorFormatted, Number(jumlah));
 
         if (!result.success) {
@@ -54,11 +63,16 @@ export async function adminRoutes(fastify) {
 
     // ─── POST /admin/plan/set ─────────────────────────────────────────────────
     // Body: { nomor_wa: "6282...", plan: "starter" | "business" | "trial" }
-    fastify.post('/plan/set', async (req, reply) => {
+    fastify.post('/plan/set', { preHandler: [verifyToken, verifyAdmin] }, async (req, reply) => {
         const { nomor_wa, plan } = req.body || {};
 
         if (!nomor_wa || !plan) {
             return reply.code(400).send({ error: 'nomor_wa dan plan wajib diisi' });
+        }
+
+        const validPlans = ['trial', 'starter', 'business', 'professional'];
+        if (!validPlans.includes(plan)) {
+            return reply.code(400).send({ error: `plan harus salah satu dari: ${validPlans.join(', ')}` });
         }
 
         const nomorFormatted = nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`;

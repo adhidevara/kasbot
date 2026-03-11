@@ -1296,31 +1296,55 @@
           <div class="endpoint-header" onclick="toggleEndpoint(this)">
             <span class="method-badge badge-get">GET</span>
             <span class="endpoint-path">/api/anomali/:nomorWa/insight</span>
-            <span class="endpoint-desc">Insight AI 7 hari terakhir</span>
+            <span class="endpoint-desc">Insight & anomali per minggu (minggu 1–4)</span>
             <span class="endpoint-toggle">▾</span>
           </div>
           <div class="endpoint-body">
             <div class="auth-required">🔐 Memerlukan autentikasi</div>
-            <div class="plan-badges"><span class="plan-badge plan-basic">basic</span><span class="plan-badge plan-pro">pro</span></div>
+            <div class="plan-badges"><span class="plan-badge plan-starter">starter</span><span class="plan-badge plan-business">business</span><span class="plan-badge plan-pro">professional</span></div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Mengembalikan ringkasan keuangan + deteksi anomali + insight teks untuk minggu 1–4 bulan ini (atau bulan tertentu).</p>
+            <div class="sub-label">Query Parameters</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">bulan</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Format: <code style="color:var(--gold-light)">YYYY-MM</code>. Default: bulan ini</td></tr>
+              </tbody>
+            </table>
             <div class="tabs">
               <button class="tab-btn active-req" onclick="switchTab(this,'ep6-req')">📤 Request</button>
               <button class="tab-btn" onclick="switchTab(this,'ep6-200')">✅ 200 OK</button>
             </div>
-            <div id="ep6-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> kalastudio-prod.up.railway.app/api/anomali/628123456789/insight \
+            <div id="ep6-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalastudio-prod.up.railway.app/api/anomali/628123456789/insight?bulan=2026-03 \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="ep6-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
-  <span class="c-blue">"periode"</span>: { <span class="c-blue">"dari"</span>: <span class="c-green">"2026-03-03"</span>, <span class="c-blue">"sampai"</span>: <span class="c-green">"2026-03-09"</span> },
-  <span class="c-blue">"anomali"</span>: [
+  <span class="c-blue">"bulan"</span>: <span class="c-green">"2026-03"</span>,
+  <span class="c-blue">"minggu"</span>: [
     {
-      <span class="c-blue">"tipe"</span>: <span class="c-green">"pengeluaran_tinggi"</span>,
-      <span class="c-blue">"pesan"</span>: <span class="c-green">"Pengeluaran Rabu 40% lebih tinggi dari rata-rata"</span>,
-      <span class="c-blue">"tanggal"</span>: <span class="c-green">"2026-03-05"</span>,
-      <span class="c-blue">"nilai"</span>: <span class="c-orange">420000</span>
-    }
-  ],
-  <span class="c-blue">"insight"</span>: [
-    <span class="c-green">"Pemasukan tertinggi di hari Jumat — pertimbangkan tambah stok bahan baku"</span>,
-    <span class="c-green">"Margin keuntungan minggu ini naik 8% dibanding minggu lalu"</span>
+      <span class="c-blue">"minggu"</span>: <span class="c-orange">1</span>,
+      <span class="c-blue">"periode"</span>: { <span class="c-blue">"dari"</span>: <span class="c-green">"2026-03-01"</span>, <span class="c-blue">"sampai"</span>: <span class="c-green">"2026-03-07"</span> },
+      <span class="c-blue">"ringkasan"</span>: {
+        <span class="c-blue">"total_pemasukan"</span>: <span class="c-orange">17879000</span>,
+        <span class="c-blue">"total_pengeluaran"</span>: <span class="c-orange">2568000</span>,
+        <span class="c-blue">"laba_kotor"</span>: <span class="c-orange">15311000</span>,
+        <span class="c-blue">"margin_persen"</span>: <span class="c-orange">85.6</span>,
+        <span class="c-blue">"jumlah_transaksi"</span>: <span class="c-orange">12</span>
+      },
+      <span class="c-blue">"anomali"</span>: [
+        {
+          <span class="c-blue">"tipe"</span>: <span class="c-green">"pengeluaran_tinggi"</span>,
+          <span class="c-blue">"pesan"</span>: <span class="c-green">"Pengeluaran Rabu 40% lebih tinggi dari rata-rata minggu ini"</span>,
+          <span class="c-blue">"tanggal"</span>: <span class="c-green">"2026-03-05"</span>,
+          <span class="c-blue">"nilai"</span>: <span class="c-orange">420000</span>
+        }
+      ],
+      <span class="c-blue">"insight"</span>: [
+        <span class="c-green">"Pemasukan tertinggi di hari Jumat (Rp3.200.000) — pertimbangkan tambah stok bahan baku"</span>,
+        <span class="c-green">"Margin keuntungan minggu ini 85.6% — performa sangat baik"</span>
+      ]
+    },
+    { <span class="c-blue">"minggu"</span>: <span class="c-orange">2</span>, <span class="c-blue">"periode"</span>: { <span class="c-blue">"dari"</span>: <span class="c-green">"2026-03-08"</span>, <span class="c-blue">"sampai"</span>: <span class="c-green">"2026-03-14"</span> }, <span class="c-blue">"ringkasan"</span>: { <span class="c-blue">"..."</span> }, <span class="c-blue">"anomali"</span>: [], <span class="c-blue">"insight"</span>: [<span class="c-green">"..."</span>] },
+    { <span class="c-blue">"minggu"</span>: <span class="c-orange">3</span>, <span class="c-blue">"..."</span> },
+    { <span class="c-blue">"minggu"</span>: <span class="c-orange">4</span>, <span class="c-blue">"..."</span> }
   ]
 }</pre></div></div></div>
           </div>

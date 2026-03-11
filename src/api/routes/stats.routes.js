@@ -20,8 +20,8 @@ export async function statsRoutes(fastify) {
             { data: activeToday },
         ] = await Promise.all([
             db.from('pengguna').select('plan'),
-            db.from('transaksi').select('id').gte('created_at', startOfDay),
-            db.from('transaksi').select('pengguna_id').gte('created_at', startOfDay),
+            db.from('transaksi').select('id').gte('transaksi_at', startOfDay),
+            db.from('transaksi').select('pengguna_id').gte('transaksi_at', startOfDay),
         ]);
 
         const byPlan = { trial: 0, starter: 0, business: 0, professional: 0 };
