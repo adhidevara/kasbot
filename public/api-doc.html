@@ -201,6 +201,7 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Transaksi</div>
+        <a href="#trx-full_list" class="nav-item"><span class="nav-method method-get">GET</span>Full Transaction</a>
         <a href="#trx-list" class="nav-item"><span class="nav-method method-get">GET</span>List</a>
         <a href="#trx-summary" class="nav-item"><span class="nav-method method-get">GET</span>Summary</a>
         <a href="#trx-detail" class="nav-item"><span class="nav-method method-get">GET</span>Detail</a>
@@ -885,6 +886,73 @@
         <div class="section-header">
           <span class="section-number">04</span>
           <h2 class="section-title">Transaksi</h2>
+        </div>
+
+        <!-- Full List -->
+        <div class="endpoint" id="trx-full_list">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/transaksi/:nomorWa</span>
+            <span class="endpoint-desc">List transaksi dengan filter & paginasi</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <div class="sub-label">Query Parameters</div>
+            <table class="field-table">
+              <thead><tr><th>Parameter</th><th>Tipe</th><th>Default</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">tipe</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc"><code style="color:var(--gold-light)">pemasukan</code> atau <code style="color:var(--gold-light)">pengeluaran</code></td></tr>
+                <tr><td class="field-name">dari</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Tanggal mulai. Format: <code style="color:var(--gold-light)">YYYY-MM-DD</code></td></tr>
+                <tr><td class="field-name">sampai</td><td class="field-type">string</td><td class="field-desc">—</td><td class="field-desc">Tanggal akhir. Format: <code style="color:var(--gold-light)">YYYY-MM-DD</code></td></tr>
+                <tr><td class="field-name">limit</td><td class="field-type">number</td><td class="field-desc">20</td><td class="field-desc">Maks per halaman (max 100)</td></tr>
+                <tr><td class="field-name">page</td><td class="field-type">number</td><td class="field-desc">1</td><td class="field-desc">Halaman</td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'ep1-reqf')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'ep1-200f')">✅ 200 OK</button>
+            </div>
+            <div id="ep1-reqf" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> "kalastudio-prod.up.railway.app/api/transaksi/:nomorWa/full?tipe=pemasukan&dari=2026-03-01&limit=20" \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
+            <div id="ep1-200f" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>
+  {
+  <span class="c-blue">"data"</span>: [
+    {
+      <span class="c-blue">"id":</span> <span class="c-green">"uuid"</span>,
+      <span class="c-blue">"tipe":</span> <span class="c-green">"pemasukan"</span>,
+      <span class="c-blue">"total":</span> <span class="c-orange">150000</span>,
+      <span class="c-blue">"kategori":</span> <span class="c-green">"..."</span>,
+      <span class="c-blue">"deskripsi":</span> <span class="c-green">"..."</span>,
+      <span class="c-blue">"pesan_ai":</span> <span class="c-green">"Mantap! Pemasukan..."</span>,
+      <span class="c-blue">"sumber_input":</span> <span class="c-green">"text"</span>,
+      <span class="c-blue">"ai_confidence":</span> <span class="c-orange">0.95</span>,
+      <span class="c-blue">"transaksi_at":</span> <span class="c-green">"..."</span>,
+      <span class="c-blue">"items":</span> [
+        { 
+          <span class="c-blue">"nama_item":</span> <span class="c-green">"Kopi"</span>, 
+          <span class="c-blue">"kuantitas":</span> <span class="c-orange">3</span>, 
+          <span class="c-blue">"satuan":</span> <span class="c-green">"cup"</span>, 
+          <span class="c-blue">"harga_satuan":</span> <span class="c-orange">15000</span>, 
+          <span class="c-blue">"subtotal":</span> <span class="c-orange">45000</span>
+        }
+      ],
+      <span class="c-blue">penyesuaian":</span> [
+        { 
+          <span class="c-blue">"nama":</span> <span class="c-green">"Diskon"</span>, 
+          <span class="c-blue">"tipe":</span> <span class="c-green">"potongan"</span>, 
+          <span class="c-blue">"nilai":</span> <span class="c-orange">10000</span> 
+        }
+      ]
+    }
+  ],
+  <span class="c-blue">"pagination":</span> { 
+    <span class="c-blue">"page":</span> <span class="c-orange">1</span>,
+    <span class="c-blue">"limit":</span> <span class="c-orange">20</span>,
+    <span class="c-blue">"total":</span> <span class="c-orange">1</span> 
+  }
+}</pre></div></div></div>
+          </div>
         </div>
 
         <!-- List -->
