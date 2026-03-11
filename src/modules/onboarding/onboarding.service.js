@@ -112,11 +112,11 @@ export async function isInOnboarding(nomorWa) {
 export async function startOnboarding(nomorWa) {
     await setState(nomorWa, { step: 1 });
     return (
-        `Halo! Selamat datang di *Nata* 👋\n\n` +
-        `Mulai hari ini, aku asisten keuangan pribadi kamu. ` +
+        `Halo! Salam Kenal aku *Nata* dari *KalaStudioAI* 👋\n\n` +
+        `Mulai hari ini, aku bisa jadi asisten keuangan pribadi kamu. ` +
         `Kamu punya *15 Token Gratis* buat nyobain saktinya catat transaksi pakai suara atau foto nota.\n\n` +
         `Cara pakainya simpel: cukup kirim *Teks*, *Voice Note*, atau *Foto Nota* di sini — nanti aku yang catat otomatis.\n\n` +
-        `Tapi dulu, boleh aku tahu *nama bisnis* kamu?`
+        `Tapi sebentar nih, boleh aku tahu *nama bisnis* kamu?`
     );
 }
 
@@ -129,8 +129,8 @@ export async function processOnboarding(nomorWa, text) {
         await setState(nomorWa, { step: 2, nama_bisnis: namaBisnis });
         return {
             reply:
-                `✅ *${namaBisnis}* dicatat!\n\n` +
-                `Bisnis Anda masuk kategori apa? (ketik angka)\n\n` +
+                `✅ Okay, *${namaBisnis}* dicatat!\n\n` +
+                `Bisnis Anda masuk kategori apa nih? (ketik angka ya!)\n\n` +
                 `1. Warung/Toko Kelontong\n2. Kuliner/F&B\n3. Peternakan\n` +
                 `4. Pertanian\n5. Jasa\n6. Retail Fashion\n7. Lainnya`,
             done: false
