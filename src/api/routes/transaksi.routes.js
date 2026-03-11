@@ -21,7 +21,7 @@ export async function transaksiRoutes(fastify) {
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
         let query = db.from('transaksi')
-            .select('id, tipe, total, kategori, deskripsi, sumber_input, ai_confidence, transaksi_at')
+            .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
             .eq('pengguna_id', user.id)
             .order('transaksi_at', { ascending: false })
             .limit(Number(limit));

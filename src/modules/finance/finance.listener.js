@@ -17,6 +17,7 @@ bus.on('ai.processing_finished', async (payload) => {
                 tipe:            payload.tipe,
                 sumber_input:    payload.source_type,
                 deskripsi:       payload.text,
+                pesan_ai:        payload.pesan_konfirmasi ?? null,
                 transaksi_at:    new Date().toISOString()
             }])
             .select('*')
