@@ -2,7 +2,7 @@
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'kala-studio-secret-ganti-di-production';
-const ADMIN_WA = process.env.ADMIN_WA?.replace('@s.whatsapp.net', '');
+const ADMIN_WA = process.env.ADMIN_WA;
 
 export function verifyToken(request, reply, done) {
     const authHeader = request.headers['authorization'];
@@ -20,7 +20,14 @@ export function verifyToken(request, reply, done) {
 }
 
 export function verifyAdmin(request, reply, done) {
-    if (request.user?.nomor_wa !== ADMIN_WA) {
+    // Normalize keduanya sebelum compare (support dengan/tanpa @s.whatsapp.net)
+    const normalize = (n) => n?.replace('@s.whatsapp.net', '').replace(/\D/g, '');
+    const userWa  = normalize(request.user?.nomor_wa);
+    const adminWa = normalize(ADMIN_WA);
+
+    const isAdminEmail = process.env.ADMIN_EMAIL && request.user?.email === process.env.ADMIN_EMAIL;
+
+    if (!isAdminEmail && userWa !== adminWa) {
         return reply.code(403).send({ success: false, message: 'Akses ditolak. Admin only.' });
     }
     done();
