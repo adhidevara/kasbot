@@ -13,6 +13,24 @@ const PLAN_TOKEN_MAP = {
     professional: null, // unlimited
 };
 
+// ─── Helper: validasi & normalize nomor WA ───────────────────────────────────
+function validateNomorWa(nomor_wa) {
+    if (!nomor_wa) return { valid: true, formatted: null }; // opsional
+
+    // Strip non-digit
+    const digits = nomor_wa.replace(/\D/g, '');
+
+    // Harus diawali 62 dan panjang 10-15 digit
+    if (!digits.startsWith('62')) {
+        return { valid: false, message: 'Nomor WA harus diawali 62 (format internasional Indonesia)' };
+    }
+    if (digits.length < 10 || digits.length > 15) {
+        return { valid: false, message: 'Nomor WA tidak valid (terlalu pendek atau panjang)' };
+    }
+
+    return { valid: true, formatted: `${digits}@s.whatsapp.net` };
+}
+
 export async function authRoutes(fastify) {
 
     // ─── POST /api/auth/register ──────────────────────────────────────────────
@@ -58,9 +76,15 @@ export async function authRoutes(fastify) {
             });
         }
 
+        // Validasi & normalize nomor WA
+        const waValidation = validateNomorWa(nomor_wa);
+        if (!waValidation.valid) {
+            return reply.code(400).send({ success: false, message: waValidation.message });
+        }
+        const nomorFormatted = waValidation.formatted;
+
         // Cek nomor WA kalau diisi
-        if (nomor_wa) {
-            const nomorFormatted = nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`;
+        if (nomorFormatted) {
             const existingWa = await isUserRegistered(nomorFormatted);
             if (existingWa) {
                 return reply.code(409).send({
@@ -70,14 +94,10 @@ export async function authRoutes(fastify) {
             }
         }
 
-        // 2. SANITASI BAHAN BAKU
-        // Pastikan bahan_baku selalu berupa Array sebelum masuk ke DB (mencegah error JSONB/Array di Postgres)
+        // Sanitasi bahan baku
         const finalBahanBaku = Array.isArray(bahan_baku) ? bahan_baku : [];
 
         const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
-        const nomorFormatted = nomor_wa
-            ? (nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`)
-            : null;
 
         const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 15; // null = professional unlimited
         const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -155,8 +175,11 @@ export async function authRoutes(fastify) {
         if (email) {
             query = query.eq('email', email);
         } else {
-            const nomorFormatted = nomor_wa.includes('@') ? nomor_wa : `${nomor_wa}@s.whatsapp.net`;
-            query = query.eq('nomor_wa', nomorFormatted);
+            const waValidation = validateNomorWa(nomor_wa);
+            if (!waValidation.valid) {
+                return reply.code(400).send({ success: false, message: waValidation.message });
+            }
+            query = query.eq('nomor_wa', waValidation.formatted);
         }
 
         const { data: user } = await query.single();

@@ -24,7 +24,7 @@ export async function statsRoutes(fastify) {
             db.from('transaksi').select('pengguna_id').gte('created_at', startOfDay),
         ]);
 
-        const byPlan = { trial: 0, basic: 0, pro: 0 };
+        const byPlan = { trial: 0, starter: 0, business: 0, professional: 0 };
         for (const u of (allUsers || [])) {
             if (byPlan[u.plan] !== undefined) byPlan[u.plan]++;
         }

@@ -213,6 +213,8 @@
         <a href="#lap-harian" class="nav-item"><span class="nav-method method-get">GET</span>Harian</a>
         <a href="#lap-mingguan" class="nav-item"><span class="nav-method method-get">GET</span>Mingguan</a>
         <a href="#lap-bulanan" class="nav-item"><span class="nav-method method-get">GET</span>Bulanan</a>
+        <a href="#lap-chart-mingguan" class="nav-item"><span class="nav-method method-get">GET</span>Chart Mingguan</a>
+        <a href="#lap-chart-bulanan" class="nav-item"><span class="nav-method method-get">GET</span>Chart Bulanan</a>
       </div>
 
       <div class="nav-section">
@@ -250,7 +252,7 @@
         <div class="meta-item"><span class="meta-label">Format</span><span class="meta-value">JSON</span></div>
         <div class="meta-item"><span class="meta-label">Auth</span><span class="meta-value">Bearer JWT</span></div>
         <div class="meta-item"><span class="meta-label">Timezone</span><span class="meta-value">Asia/Jakarta</span></div>
-        <div class="meta-item"><span class="meta-label">Endpoints</span><span class="meta-value">25</span></div>
+        <div class="meta-item"><span class="meta-label">Endpoints</span><span class="meta-value">27</span></div>
       </div>
     </div>
 
@@ -300,7 +302,7 @@
   -d <span class="c-green">
   ' // Login dengan email dan password
     {
-      "email": "user@email.com",
+      "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="becbcddbccfedbd3dfd7d290ddd1d3">[email&#160;protected]</a>",
       "password": "passwordTersembunyi123"
     }
 
@@ -424,7 +426,7 @@
             <div id="setp-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST https://kalastudio-prod.up.railway.app/api/auth/set-password \
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
   -H <span class="c-green">"Content-Type: application/json"</span> \
-  -d <span class="c-green">'{ "email": "user@email.com", "password": "rahasia123" }'</span></pre></div></div></div>
+  -d <span class="c-green">'{ "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="eb9e988e99ab8e868a8287c5888486">[email&#160;protected]</a>", "password": "rahasia123" }'</span></pre></div></div></div>
             <div id="setp-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">true</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Email dan password berhasil diset"</span> }</pre></div></div></div>
             <div id="setp-409" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Email sudah digunakan"</span> }</pre></div></div></div>
           </div>
@@ -1145,6 +1147,72 @@
 }</pre></div></div></div>
           </div>
         </div>
+
+        <!-- GET /api/laporan/:nomorWa/chart/mingguan -->
+        <div class="endpoint" id="lap-chart-mingguan">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/laporan/:nomorWa/chart/mingguan</span>
+            <span class="endpoint-desc">Tren keuangan 7 hari terakhir</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Data pemasukan & pengeluaran per hari dalam 7 hari terakhir. Cocok untuk bar chart di dashboard.</p>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'lcm-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'lcm-200')">✅ 200 OK</button>
+            </div>
+            <div id="lcm-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalastudio-prod.up.railway.app/api/laporan/628123456789/chart/mingguan \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
+            <div id="lcm-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
+  <span class="c-blue">"data"</span>: [
+    { <span class="c-blue">"name"</span>: <span class="c-green">"Sen"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">7000000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">5000000</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"Sel"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">7500000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">3000000</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"Rab"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">6000000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">4000000</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"Kam"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">2300000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">1000000</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"Jum"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">5000000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">4000000</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"Sab"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">1000000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">500000</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"Min"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">1500000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">1000000</span> }
+  ]
+}</pre></div></div></div>
+          </div>
+        </div>
+
+        <!-- GET /api/laporan/:nomorWa/chart/bulanan -->
+        <div class="endpoint" id="lap-chart-bulanan">
+          <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge badge-get">GET</span>
+            <span class="endpoint-path">/api/laporan/:nomorWa/chart/bulanan</span>
+            <span class="endpoint-desc">Tren keuangan per hari dalam bulan</span>
+            <span class="endpoint-toggle">▾</span>
+          </div>
+          <div class="endpoint-body">
+            <div class="auth-required">🔐 Memerlukan autentikasi</div>
+            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Data pemasukan & pengeluaran per tanggal dalam satu bulan. Default bulan ini.</p>
+            <div class="sub-label">Query Parameters</div>
+            <table class="field-table">
+              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td class="field-name">bulan</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Format: <code style="color:var(--gold-light)">YYYY-MM</code>. Default: bulan ini</td></tr>
+              </tbody>
+            </table>
+            <div class="tabs">
+              <button class="tab-btn active-req" onclick="switchTab(this,'lcb-req')">📤 Request</button>
+              <button class="tab-btn" onclick="switchTab(this,'lcb-200')">✅ 200 OK</button>
+            </div>
+            <div id="lcb-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> https://kalastudio-prod.up.railway.app/api/laporan/628123456789/chart/bulanan?bulan=2026-03 \
+  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
+            <div id="lcb-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
+  <span class="c-blue">"data"</span>: [
+    { <span class="c-blue">"name"</span>: <span class="c-green">"1"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">500000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">200000</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"2"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">0</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">0</span> },
+    { <span class="c-blue">"name"</span>: <span class="c-green">"3"</span>, <span class="c-blue">"pemasukan"</span>: <span class="c-orange">1200000</span>, <span class="c-blue">"pengeluaran"</span>: <span class="c-orange">750000</span> }
+  ]
+}</pre></div></div></div>
+          </div>
+        </div>
+
       </section>
 
       <!-- ══════════════════════════════════════════ -->
@@ -1404,7 +1472,7 @@
   </main>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   function switchTab(btn, panelId) {
     const tabGroup = btn.closest('.tabs');
     tabGroup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-req','active-200','active-4xx'));
