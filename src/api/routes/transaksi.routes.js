@@ -39,6 +39,67 @@ export async function transaksiRoutes(fastify) {
         });
     });
 
+
+    // GET /api/transaksi/:nomorWa/full — list transaksi lengkap dengan items & penyesuaian
+    fastify.get('/:nomorWa/full', { preHandler: [verifyToken] }, async (request, reply) => {
+        const { nomorWa } = request.params;
+        const { tipe, dari, sampai, limit = 20, page = 1 } = request.query;
+
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
+        if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
+
+        // 1. Ambil list transaksi
+        let query = db.from('transaksi')
+            .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
+            .eq('pengguna_id', user.id)
+            .order('transaksi_at', { ascending: false })
+            .limit(Number(limit));
+
+        if (tipe)   query = query.eq('tipe', tipe);
+        if (dari)   query = query.gte('transaksi_at', `${dari} 00:00:00`);
+        if (sampai) query = query.lte('transaksi_at', `${sampai} 23:59:59`);
+
+        const { data: transaksiList, error } = await query;
+        if (error) return reply.code(500).send({ success: false, message: error.message });
+        if (!transaksiList.length) return reply.send({ data: [], pagination: { page: Number(page), limit: Number(limit), total: 0 } });
+
+        // 2. Ambil semua items & penyesuaian sekaligus (batch, bukan N+1)
+        const ids = transaksiList.map(t => t.id);
+
+        const [{ data: allItems }, { data: allPenyesuaian }] = await Promise.all([
+            db.from('detail_transaksi')
+                .select('transaksi_id, nama_item, kuantitas, satuan, harga_satuan, subtotal')
+                .in('transaksi_id', ids),
+            db.from('penyesuaian_transaksi')
+                .select('transaksi_id, nama, tipe, nilai')
+                .in('transaksi_id', ids),
+        ]);
+
+        // 3. Group by transaksi_id
+        const itemsMap = {};
+        const penyesuaianMap = {};
+        for (const item of (allItems || [])) {
+            if (!itemsMap[item.transaksi_id]) itemsMap[item.transaksi_id] = [];
+            itemsMap[item.transaksi_id].push(item);
+        }
+        for (const p of (allPenyesuaian || [])) {
+            if (!penyesuaianMap[p.transaksi_id]) penyesuaianMap[p.transaksi_id] = [];
+            penyesuaianMap[p.transaksi_id].push(p);
+        }
+
+        // 4. Gabungkan
+        const data = transaksiList.map(trx => ({
+            ...trx,
+            items:       itemsMap[trx.id]       || [],
+            penyesuaian: penyesuaianMap[trx.id] || [],
+        }));
+
+        return reply.send({
+            data,
+            pagination: { page: Number(page), limit: Number(limit), total: data.length },
+        });
+    });
+
     // GET /api/transaksi/:nomorWa/summary — ringkasan cepat bulan ini
     fastify.get('/:nomorWa/summary', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa } = request.params;
