@@ -3,6 +3,13 @@ import { verifyToken } from '../middleware/auth.middleware.js';
 import { db } from '../../config/db.js';
 import { getUserProfile } from '../../modules/onboarding/onboarding.service.js';
 
+// ─── Helper: normalize nomor WA ──────────────────────────────────────────────
+function normalizeNomorWa(nomorWa) {
+    if (!nomorWa) return nomorWa;
+    if (nomorWa.includes('@')) return nomorWa;
+    return `${nomorWa}@s.whatsapp.net`;
+}
+
 export async function transaksiRoutes(fastify) {
 
     // GET /api/transaksi/:nomorWa — list dengan filter & paginasi
@@ -10,7 +17,7 @@ export async function transaksiRoutes(fastify) {
         const { nomorWa } = request.params;
         const { tipe, dari, sampai, limit = 20, page = 1 } = request.query;
 
-        const user = await getUserProfile(nomorWa);
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
         let query = db.from('transaksi')
@@ -36,7 +43,7 @@ export async function transaksiRoutes(fastify) {
     fastify.get('/:nomorWa/summary', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa } = request.params;
 
-        const user = await getUserProfile(nomorWa);
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
         const now = new Date();
@@ -53,21 +60,17 @@ export async function transaksiRoutes(fastify) {
         const totalPemasukan = trxList.filter(t => t.tipe === 'pemasukan').reduce((s, t) => s + Number(t.total), 0);
         const totalPengeluaran = trxList.filter(t => t.tipe === 'pengeluaran').reduce((s, t) => s + Number(t.total), 0);
 
-        // kuota
-        const BATAS = { trial: 30, basic: 300, pro: null };
-        const batas = BATAS[user.plan] ?? 30;
-
         return reply.send({
             bulan: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
             total_pemasukan: totalPemasukan,
             total_pengeluaran: totalPengeluaran,
             laba_bersih: totalPemasukan - totalPengeluaran,
             jumlah_transaksi: trxList.length,
-            kuota: {
-                terpakai: trxList.length,
-                batas,
-                sisa: batas ? Math.max(0, batas - trxList.length) : null,
+            token: {
+                balance: user.token_balance ?? 0,
+                total:   user.token_total ?? 0,
             },
+            plan: user.plan,
         });
     });
 
@@ -75,7 +78,7 @@ export async function transaksiRoutes(fastify) {
     fastify.get('/:nomorWa/:id', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa, id } = request.params;
 
-        const user = await getUserProfile(nomorWa);
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
         const { data: trx, error: e1 } = await db.from('transaksi')
@@ -102,7 +105,7 @@ export async function transaksiRoutes(fastify) {
     fastify.patch('/:nomorWa/:id', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa, id } = request.params;
 
-        const user = await getUserProfile(nomorWa);
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
         const allowedFields = ['total', 'tipe', 'deskripsi', 'kategori', 'transaksi_at'];
@@ -129,7 +132,7 @@ export async function transaksiRoutes(fastify) {
     fastify.delete('/:nomorWa/:id', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa, id } = request.params;
 
-        const user = await getUserProfile(nomorWa);
+        const user = await getUserProfile(normalizeNomorWa(nomorWa));
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
 
         const { data: trx } = await db.from('transaksi').select('id').eq('id', id).eq('pengguna_id', user.id).single();
