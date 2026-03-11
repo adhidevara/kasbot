@@ -16,7 +16,7 @@ const KATEGORI_BISNIS = {
     '7': 'Lainnya'
 };
 
-const USER_CACHE_TTL = 5 * 60; // 5 menit
+const USER_CACHE_TTL = 30; // 1 menit
 
 // ─── Supabase-backed onboarding state ────────────────────────────────────────
 
@@ -220,7 +220,7 @@ export async function processOnboarding(nomorWa, text) {
             plan: 'trial',
             trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             token_balance: 15,
-            token_total:   15,
+            token_total: 15,
             token_reset_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         }, { onConflict: 'nomor_wa' });
