@@ -3,6 +3,7 @@ node_modules/
 
 # Environment variables (JANGAN PERNAH di-commit)
 .env
+.claude
 
 # WhatsApp session (regenerate dengan scan QR ulang)
 auth_info_baileys/

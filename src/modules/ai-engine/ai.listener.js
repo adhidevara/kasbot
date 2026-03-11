@@ -8,8 +8,8 @@ import {
     startOnboarding,
     processOnboarding
 } from '../onboarding/onboarding.service.js';
-import { checkTransaksiLimit } from '../tier/tier.service.js';
-import { isReportCommand, handleReportMenu } from '../report/report.listener.js';
+import { checkTransaksiLimit, deductToken } from '../tier/tier.service.js';
+import { isReportCommand, handleReportMenu, isChatQuery } from '../report/report.listener.js';
 
 logger.info("👂 AI Listener: Aktif dan menunggu sinyal dari WhatsApp...");
 
@@ -19,9 +19,7 @@ bus.on('whatsapp.message_received', async (payload) => {
 
     logger.verbose(`📨 Pesan dari ${nomorWa}: "${text}"`);
 
-    // ─────────────────────────────────────────
-    // STEP 1: CEK REGISTRASI & ONBOARDING
-    // ─────────────────────────────────────────
+    // ─── STEP 1: CEK REGISTRASI & ONBOARDING ───
     const userProfile = await isUserRegistered(nomorWa);
 
     if (!userProfile) {
@@ -47,82 +45,92 @@ bus.on('whatsapp.message_received', async (payload) => {
         return;
     }
 
-    // ─────────────────────────────────────────
-    // STEP 2: CEK INTENT — LAPORAN?
-    // ─────────────────────────────────────────
-    const reportHandled = await handleReportMenu(nomorWa, sender, text, userProfile);
-    if (reportHandled) return;
-
-    const { isReport, periode } = isReportCommand(text);
-    if (isReport) {
-        bus.emit('report.requested', { sender, nomorWa, text, periode, userProfile });
-        return;
-    }
-
-    // ─────────────────────────────────────────
-    // STEP 3: CEK TOKEN
-    // ─────────────────────────────────────────
+    // ─── STEP 2: CEK LIMIT TOKEN (Global Check) ───
     const accessCheck = await checkTransaksiLimit(nomorWa, source_type, durasi_detik);
     if (!accessCheck.allowed) {
         bus.emit('whatsapp.send_message', { to: sender, text: accessCheck.message });
         return;
     }
 
-    // Warning token menipis — kirim tapi tetap lanjut proses
-    if (accessCheck.warningToken) {
-        bus.emit('whatsapp.send_message', { to: sender, text: accessCheck.warningToken });
+    // Fungsi pembantu untuk mengirim peringatan agar tidak duplikasi kode
+    const sendWarningIfCritical = () => {
+        if (accessCheck.warningToken) {
+            bus.emit('whatsapp.send_message', { 
+                to: sender, 
+                text: accessCheck.warningToken 
+            });
+        }
+    };
+
+    // ─── STEP 3: CEK INTENT (Laporan & Query) ───
+    // Untuk pesan teks, cek apakah user sedang memilih menu laporan atau menanyakan saldo, atau langsung minta laporan
+    if (source_type === 'teks' || source_type === 'suara') {
+        // A. Handle Menu Laporan (Pilihan angka 1-3)
+        const reportHandled = await handleReportMenu(nomorWa, sender, text, userProfile, accessCheck);
+        if (reportHandled) {
+            sendWarningIfCritical(); // Munculkan peringatan setelah pilih menu
+            return;
+        }
+
+        // B. Tanya Pendapatan/Pengeluaran (Chat Query)
+        const { isQuery, tipe: queryTipe, periode: queryPeriode } = isChatQuery(text);
+        if (isQuery) {
+            await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
+            bus.emit('chat.query', { sender, nomorWa, tipe: queryTipe, periode: queryPeriode, userProfile, sisaToken: accessCheck.sisaToken });
+            sendWarningIfCritical(); // Munculkan peringatan setelah tanya saldo
+            return;
+        }
+
+        // C. Perintah Laporan Langsung
+        const { isReport, periode } = isReportCommand(text);
+        if (isReport) {
+            if (periode) {
+                await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
+                sendWarningIfCritical(); // Munculkan peringatan setelah laporan langsung
+            }
+            bus.emit('report.requested', { sender, nomorWa, text, periode, userProfile, sisaToken: accessCheck.sisaToken });
+            return;
+        }
     }
 
-    // ─────────────────────────────────────────
-    // STEP 4: PROSES AI
-    // ─────────────────────────────────────────
+    // ─── STEP 4: PROSES AI (Transaksi Baru) ───
     logger.verbose(`🤖 AI Engine: Memproses pesan dari ${nomorWa}...`);
 
     let aiResult;
-
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
             aiResult = await processInput(text, {
-                kategori:   userProfile.kategori_bisnis || 'Umum',
-                bahan_baku: userProfile.bahan_baku || []
+                kategori:      userProfile.kategori_bisnis || 'Umum',
+                bahan_baku:    userProfile.bahan_baku || [],
+                nama_pengguna: userProfile.nama || userProfile.nama_bisnis || null,
             });
             break;
         } catch (error) {
             const is429 = error.status === 429 || error.message?.includes('429');
             if (is429 && attempt < 3) {
                 const delay = attempt * 10000;
-                logger.warn(`⏳ Rate limit Gemini. Retry ke-${attempt} dalam ${delay / 1000}s...`);
+                logger.warn(`⏳ Rate limit Gemini. Retry ke-${attempt}...`);
                 await new Promise(res => setTimeout(res, delay));
             } else {
                 logger.error("AI Engine Error:", error.message);
-                bus.emit('whatsapp.send_message', {
-                    to: sender,
-                    text: "⚠️ Bot sedang sibuk, silakan kirim ulang pesan dalam beberapa detik."
-                });
+                bus.emit('whatsapp.send_message', { to: sender, text: "⚠️ Bot sedang sibuk, silakan coba lagi." });
                 return;
             }
         }
     }
 
-    // AI tidak mengenali transaksi — token TIDAK dikurangi
     if (!aiResult || !aiResult.total) {
         logger.warn(`⚠️ AI tidak mengenali transaksi: "${text}"`);
         bus.emit('whatsapp.send_message', {
             to: sender,
-            text:
-                `🤔 Saya tidak dapat mengenali transaksi dari pesan tersebut.\n\n` +
-                `Coba format seperti:\n` +
-                `• _"jual ayam 5 ekor @50000"_\n` +
-                `• _"beli tepung 2 kg @15000"_\n` +
-                `• _"report hari ini, minggu ini, bulan ini"_\n` +
-                `• _"pemasukan/pengeluaran untuk hari ini/minggu ini/bulan ini"_\n` +
-                `• _[foto struk]_\n` +
-                `• _[voice note]_`
+            text: `🤔 Saya tidak dapat mengenali transaksi tersebut. Coba format: "Jual ayam 2 @50rb"`
         });
         return;
     }
 
-    logger.info("✨ AI Berhasil Ekstraksi:", JSON.stringify(aiResult, null, 2));
+    // ─── STEP 5: DEDUCT TOKEN (Berhasil Ekstraksi) ───
+    await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
+    sendWarningIfCritical(); // Munculkan peringatan setelah catat transaksi
 
     bus.emit('ai.processing_finished', {
         ...payload,
