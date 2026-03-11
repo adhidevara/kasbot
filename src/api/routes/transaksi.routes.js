@@ -33,33 +33,31 @@ export async function transaksiRoutes(fastify) {
             return reply.code(403).send({ success: false, message: 'Akses ditolak' });
         }
 
-        const limitNum  = Number(limit);
-        const pageNum   = Number(page);
-        const offset    = (pageNum - 1) * limitNum;
+        const limitNum = Number(limit);
+        const pageNum = Number(page);
+        const offset = (pageNum - 1) * limitNum;
 
-        // Query data + count paralel
-        let baseQuery = db.from('transaksi').eq('pengguna_id', user.id);
-        if (tipe)   baseQuery = baseQuery.eq('tipe', tipe);
-        if (dari)   baseQuery = baseQuery.gte('transaksi_at', `${dari} 00:00:00`);
-        if (sampai) baseQuery = baseQuery.lte('transaksi_at', `${sampai} 23:59:59`);
+        // Query data + count in one go
+        let query = db.from('transaksi')
+            .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at', { count: 'exact' })
+            .eq('pengguna_id', user.id);
 
-        const [{ data, error }, { count }] = await Promise.all([
-            baseQuery
-                .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
-                .order('transaksi_at', { ascending: false })
-                .range(offset, offset + limitNum - 1),
-            baseQuery
-                .select('*', { count: 'exact', head: true }),
-        ]);
+        if (tipe) query = query.eq('tipe', tipe);
+        if (dari) query = query.gte('transaksi_at', `${dari} 00:00:00`);
+        if (sampai) query = query.lte('transaksi_at', `${sampai} 23:59:59`);
+
+        const { data, error, count } = await query
+            .order('transaksi_at', { ascending: false })
+            .range(offset, offset + limitNum - 1);
 
         if (error) return reply.code(500).send({ success: false, message: error.message });
 
         return reply.send({
             data,
             pagination: {
-                page:        pageNum,
-                limit:       limitNum,
-                total:       count ?? 0,
+                page: pageNum,
+                limit: limitNum,
+                total: count ?? 0,
                 total_pages: Math.ceil((count ?? 0) / limitNum),
             },
         });
@@ -80,23 +78,21 @@ export async function transaksiRoutes(fastify) {
         }
 
         const limitNum = Number(limit);
-        const pageNum  = Number(page);
-        const offset   = (pageNum - 1) * limitNum;
+        const pageNum = Number(page);
+        const offset = (pageNum - 1) * limitNum;
 
-        // 1. Ambil list transaksi + count paralel
-        let baseQuery = db.from('transaksi').eq('pengguna_id', user.id);
-        if (tipe)   baseQuery = baseQuery.eq('tipe', tipe);
-        if (dari)   baseQuery = baseQuery.gte('transaksi_at', `${dari} 00:00:00`);
-        if (sampai) baseQuery = baseQuery.lte('transaksi_at', `${sampai} 23:59:59`);
+        // 1. Ambil list transaksi + count
+        let query = db.from('transaksi')
+            .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at', { count: 'exact' })
+            .eq('pengguna_id', user.id);
 
-        const [{ data: transaksiList, error }, { count }] = await Promise.all([
-            baseQuery
-                .select('id, tipe, total, kategori, deskripsi, pesan_ai, sumber_input, ai_confidence, transaksi_at')
-                .order('transaksi_at', { ascending: false })
-                .range(offset, offset + limitNum - 1),
-            baseQuery
-                .select('*', { count: 'exact', head: true }),
-        ]);
+        if (tipe) query = query.eq('tipe', tipe);
+        if (dari) query = query.gte('transaksi_at', `${dari} 00:00:00`);
+        if (sampai) query = query.lte('transaksi_at', `${sampai} 23:59:59`);
+
+        const { data: transaksiList, error, count } = await query
+            .order('transaksi_at', { ascending: false })
+            .range(offset, offset + limitNum - 1);
 
         if (error) return reply.code(500).send({ success: false, message: error.message });
         if (!transaksiList.length) return reply.send({ data: [], pagination: { page: pageNum, limit: limitNum, total: count ?? 0, total_pages: Math.ceil((count ?? 0) / limitNum) } });
@@ -128,16 +124,16 @@ export async function transaksiRoutes(fastify) {
         // 4. Gabungkan
         const data = transaksiList.map(trx => ({
             ...trx,
-            items:       itemsMap[trx.id]       || [],
+            items: itemsMap[trx.id] || [],
             penyesuaian: penyesuaianMap[trx.id] || [],
         }));
 
         return reply.send({
             data,
             pagination: {
-                page:        pageNum,
-                limit:       limitNum,
-                total:       count ?? 0,
+                page: pageNum,
+                limit: limitNum,
+                total: count ?? 0,
                 total_pages: Math.ceil((count ?? 0) / limitNum),
             },
         });
@@ -176,7 +172,7 @@ export async function transaksiRoutes(fastify) {
             jumlah_transaksi: trxList.length,
             token: {
                 balance: user.token_balance ?? 0,
-                total:   user.token_total ?? 0,
+                total: user.token_total ?? 0,
             },
             plan: user.plan,
         });
