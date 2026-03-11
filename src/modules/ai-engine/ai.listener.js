@@ -8,7 +8,7 @@ import {
     startOnboarding,
     processOnboarding
 } from '../onboarding/onboarding.service.js';
-import { checkTransaksiLimit, deductToken } from '../tier/tier.service.js';
+import { checkTransaksiLimit } from '../tier/tier.service.js';
 import { isReportCommand, handleReportMenu } from '../report/report.listener.js';
 
 logger.info("👂 AI Listener: Aktif dan menunggu sinyal dari WhatsApp...");
@@ -114,6 +114,8 @@ bus.on('whatsapp.message_received', async (payload) => {
                 `Coba format seperti:\n` +
                 `• _"jual ayam 5 ekor @50000"_\n` +
                 `• _"beli tepung 2 kg @15000"_\n` +
+                `• _"report hari ini, minggu ini, bulan ini"_\n` +
+                `• _"pemasukan/pengeluaran untuk hari ini/minggu ini/bulan ini"_\n` +
                 `• _[foto struk]_\n` +
                 `• _[voice note]_`
         });
@@ -121,11 +123,6 @@ bus.on('whatsapp.message_received', async (payload) => {
     }
 
     logger.info("✨ AI Berhasil Ekstraksi:", JSON.stringify(aiResult, null, 2));
-
-    // ─────────────────────────────────────────
-    // STEP 5: DEDUCT TOKEN
-    // ─────────────────────────────────────────
-    await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
 
     bus.emit('ai.processing_finished', {
         ...payload,

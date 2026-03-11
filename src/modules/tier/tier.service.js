@@ -125,6 +125,9 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
     }
 
     if (balance < tokenDibutuhkan) {
+        const keteranganSumber = sourceType === 'suara'
+            ? ` (voice note ${durasiDetik} detik)`
+            : '';
         return {
             allowed: false,
             plan:    access.plan,
@@ -132,7 +135,7 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
             message:
                 `🚫 *Token tidak cukup.*\n\n` +
                 `Sisa token: *${balance}*\n` +
-                `Dibutuhkan: *${tokenDibutuhkan} token* (voice note ${durasiDetik} detik)\n\n` +
+                `Dibutuhkan: *${tokenDibutuhkan} token*${keteranganSumber}\n\n` +
                 `Hubungi admin untuk top-up.`
         };
     }
@@ -155,33 +158,21 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
 
 // ─── Deduct token setelah transaksi berhasil ──────────────────────────────────
 export async function deductToken(userId, nomorWa, jumlah = 1) {
-    // Skip deduct untuk plan unlimited
-    const access = await checkAccess(nomorWa);
-    if (access.isUnlimited) {
-        logger.verbose(`🪙 Skip deduct (unlimited) | ${nomorWa}`);
-        return { newBalance: Infinity, deducted: 0 };
-    }
-
     try {
-        // Professional: skip deduction
         const access = await checkAccess(nomorWa);
+
+        // Professional: unlimited — skip deduction
         if (access.config?.unlimited) {
             logger.verbose(`♾️ Professional plan — skip deduct token | ${nomorWa}`);
             return { newBalance: Infinity, deducted: 0 };
         }
 
-        const { data: user, error } = await db
-            .from('pengguna')
-            .select('token_balance')
-            .eq('id', userId)
-            .single();
-
-        if (error || !user) {
+        if (!access.user) {
             logger.error('deductToken: user tidak ditemukan', userId);
             return false;
         }
 
-        const newBalance = Math.max(0, (user.token_balance ?? 0) - jumlah);
+        const newBalance = Math.max(0, (access.user.token_balance ?? 0) - jumlah);
 
         await db.from('pengguna')
             .update({
@@ -247,7 +238,7 @@ export async function setPlan(nomorWa, plan) {
 
     await invalidateUserCache(nomorWa);
 
-    logger.info(`📋 Set plan ${plan} (${config.tokenAwal} token) untuk ${nomorWa}`);
+    logger.info(`📋 Set plan ${plan} (${config.tokenAwal !== null ? `${config.tokenAwal} token` : 'unlimited'}) untuk ${nomorWa}`);
     return { success: true, plan, tokenBalance: config.tokenAwal };
 }
 
@@ -263,7 +254,7 @@ export async function getPlanStatusMessage(nomorWa) {
     const access = await checkAccess(nomorWa);
     if (!access.allowed) return access.message;
 
-    const { plan, config, tokenBalance, isUnlimited } = access;
+    const { plan, config, tokenBalance } = access;
 
     return (
         `📊 *Status Akun Anda*\n\n` +

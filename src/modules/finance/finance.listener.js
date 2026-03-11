@@ -2,6 +2,7 @@
 import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 import bus from '../../shared/eventBus.js';
+import { deductToken } from '../tier/tier.service.js';
 
 bus.on('ai.processing_finished', async (payload) => {
     logger.info("Finance Module: Menyimpan transaksi ke Database...");
@@ -52,6 +53,14 @@ bus.on('ai.processing_finished', async (payload) => {
             const { error: adjErr } = await db.from('penyesuaian_transaksi').insert(adjustments);
             if (adjErr) throw adjErr;
             logger.verbose(`💾 ${adjustments.length} penyesuaian disimpan`);
+        }
+
+        // 4. Deduct token — setelah semua data berhasil tersimpan ke DB
+        if (payload.token_digunakan > 0) {
+            const deductResult = await deductToken(payload.user_id, payload.pengguna_id_alt, payload.token_digunakan);
+            if (!deductResult) {
+                logger.error(`⚠️ deductToken gagal untuk user ${payload.user_id} — transaksi tetap tersimpan, perlu manual correction`);
+            }
         }
 
         bus.emit('finance.transaction_saved', {
