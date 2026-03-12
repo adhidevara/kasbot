@@ -40,7 +40,7 @@
     "@fastify/static": "^9.0.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.98.0",
-    "@whiskeysockets/baileys": "github:WhiskeySockets/Baileys",
+    "@whiskeysockets/baileys": "^6.7.16",
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.70.4",
