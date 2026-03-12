@@ -50,14 +50,21 @@ export async function userRoutes(fastify) {
 
     // POST /api/users/register — daftarkan pengguna baru (admin)
     fastify.post('/register', { preHandler: [verifyToken, verifyAdmin] }, async (request, reply) => {
-        const { nomor_wa, nama_bisnis, kategori_bisnis, bahan_baku = [], plan = 'trial', trial_ends_at } = request.body || {};
+        const { nomor_wa, nama, nama_bisnis, kategori_bisnis, bahan_baku = [], alamat, plan = 'trial', trial_ends_at } = request.body || {};
 
         if (!nomor_wa || !nama_bisnis || !kategori_bisnis) {
             return reply.code(400).send({ success: false, message: 'nomor_wa, nama_bisnis, dan kategori_bisnis wajib diisi' });
         }
 
+        // Normalize nomor_wa → format Baileys (628xxx@s.whatsapp.net)
+        const digits = nomor_wa.replace(/\D/g, '');
+        if (!digits.startsWith('62') || digits.length < 10 || digits.length > 15) {
+            return reply.code(400).send({ success: false, message: 'nomor_wa harus diawali 62 (format internasional Indonesia)' });
+        }
+        const nomorFormatted = `${digits}@s.whatsapp.net`;
+
         // Cek sudah terdaftar
-        const existing = await isUserRegistered(nomor_wa);
+        const existing = await isUserRegistered(nomorFormatted);
         if (existing) {
             return reply.code(409).send({ success: false, message: 'Nomor WA sudah terdaftar' });
         }
@@ -70,7 +77,9 @@ export async function userRoutes(fastify) {
         const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 15;
 
         const insertData = {
-            nomor_wa,
+            nomor_wa:   nomorFormatted,
+            nama:       nama || null,
+            alamat:     alamat || null,
             nama_bisnis,
             kategori_bisnis,
             bahan_baku,
@@ -95,7 +104,8 @@ export async function userRoutes(fastify) {
             success: true,
             message: 'Pengguna berhasil didaftarkan',
             user: {
-                nomor_wa,
+                nomor_wa:  nomorFormatted,
+                nama,
                 nama_bisnis,
                 plan,
                 trial_ends_at: trialEnd.toISOString(),
@@ -139,7 +149,7 @@ export async function userRoutes(fastify) {
     // GET /api/users/:nomorWa/plan — status plan & kuota
     fastify.get('/:nomorWa/plan', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa } = request.params;
-        const access = await checkAccess(nomorWa);
+        const access = await checkAccess(normalizeNomorWa(nomorWa));
         if (!access.allowed && access.reason !== 'trial_expired') {
             return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
         }
@@ -180,7 +190,7 @@ export async function userRoutes(fastify) {
 
         // Import setPlan dari tier.service untuk reset token sekaligus
         const { setPlan } = await import('../../modules/tier/tier.service.js');
-        const result = await setPlan(nomorWa, plan);
+        const result = await setPlan(normalizeNomorWa(nomorWa), plan);
         if (!result.success) {
             return reply.code(400).send({ success: false, message: result.message });
         }

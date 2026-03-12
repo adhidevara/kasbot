@@ -17,9 +17,9 @@ let waStatus = 'disconnected';
 let currentQR = null;
 
 // ─── Helper: ambil nomor WA asli dari msg.key ─────────────────────────────────
-// Baileys v6+ menyimpan nomor asli di msg.key.remoteJidAlt saat format @lid
+// Priority: senderPn (v6 @lid) → remoteJidAlt → remoteJid
 function resolveNomorWa(msgKey) {
-    return msgKey.remoteJidAlt || msgKey.remoteJid;
+    return msgKey.senderPn || msgKey.remoteJidAlt || msgKey.remoteJid;
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────
@@ -128,7 +128,14 @@ export async function startWA() {
 
                 // ─── Resolve @lid → nomor WA asli ─────────────────────────────
                 const nomorWa = resolveNomorWa(msg.key);
+                logger.verbose(`📋 [DEBUG msg.key] ${JSON.stringify(msg.key)}`);
                 logger.verbose(`📋 sender=${sender} | nomorWa=${nomorWa}`);
+
+                // Tolak @lid tanpa resolusi nomor asli — tidak bisa di-lookup di DB
+                if (nomorWa.endsWith('@lid')) {
+                    logger.warn(`⚠️ Pesan dari @lid tanpa remoteJidAlt, skip: ${nomorWa}`);
+                    continue;
+                }
 
                 const msgTime = (msg.messageTimestamp || 0) * 1000;
                 if (Date.now() - msgTime > 30_000) {
