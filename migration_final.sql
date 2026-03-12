@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS pengguna (
     threshold_alert     JSONB DEFAULT '{}'::jsonb,
     onboarding_selesai  BOOLEAN DEFAULT FALSE,
     welcomed            BOOLEAN DEFAULT FALSE,
+    is_comingsoon       BOOLEAN DEFAULT FALSE,
     plan                TEXT DEFAULT 'trial',
     trial_ends_at       TIMESTAMPTZ,
     token_balance       NUMERIC DEFAULT 0,
@@ -117,6 +118,7 @@ ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS email          TEXT UNIQUE;
 ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS password_hash  TEXT;
 ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS alamat         TEXT;
 ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS welcomed       BOOLEAN DEFAULT FALSE;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS is_comingsoon BOOLEAN DEFAULT FALSE;
 ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS token_balance  NUMERIC DEFAULT 0;
 ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS token_total    NUMERIC DEFAULT 0;
 ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS token_reset_at TIMESTAMPTZ;

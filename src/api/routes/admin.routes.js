@@ -4,7 +4,8 @@
 
 import { topUpToken, setPlan } from '../../modules/tier/tier.service.js';
 import { verifyToken, verifyAdmin } from '../middleware/auth.middleware.js';
-import { isUserRegistered } from '../../modules/onboarding/onboarding.service.js';
+import { isUserRegistered, invalidateUserCache } from '../../modules/onboarding/onboarding.service.js';
+import { db } from '../../config/db.js';
 
 export async function adminRoutes(fastify) {
 
@@ -58,6 +59,33 @@ export async function adminRoutes(fastify) {
             nomor_wa:    nomorFormatted,
             added:       result.added,
             new_balance: result.newBalance,
+        });
+    });
+
+    // ─── PATCH /admin/user/:nomorWa/comingsoon ────────────────────────────────
+    // Body: { is_comingsoon: true | false }
+    fastify.patch('/user/:nomorWa/comingsoon', { preHandler: [verifyToken, verifyAdmin] }, async (req, reply) => {
+        const { nomorWa } = req.params;
+        const { is_comingsoon } = req.body || {};
+
+        if (typeof is_comingsoon !== 'boolean') {
+            return reply.code(400).send({ error: 'is_comingsoon harus boolean (true/false)' });
+        }
+
+        const nomorFormatted = nomorWa.includes('@') ? nomorWa : `${nomorWa}@s.whatsapp.net`;
+        const user = await isUserRegistered(nomorFormatted);
+        if (!user) return reply.code(404).send({ error: 'User tidak ditemukan' });
+
+        await db.from('pengguna')
+            .update({ is_comingsoon, updated_at: new Date().toISOString() })
+            .eq('nomor_wa', nomorFormatted);
+        await invalidateUserCache(nomorFormatted);
+
+        return reply.send({
+            success: true,
+            nomor_wa: nomorFormatted,
+            is_comingsoon,
+            message: is_comingsoon ? 'User ditandai coming soon' : 'User coming soon dinonaktifkan',
         });
     });
 

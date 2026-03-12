@@ -103,3 +103,57 @@ Ekstrak transaksi dari teks berikut: "${text}"
     throw new Error(`Gemini API Failure: ${error.message}`);
   }
 }
+
+// ─── Generate pesan Coming Soon (dinamis via AI) ──────────────────────────────
+export async function generateComingSoonMessage({ nama, namaBisnis, pesan }) {
+  try {
+    const model = genAI.getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: { responseMimeType: "text/plain" }
+    });
+
+    const prompt = `
+        ${PERSONA}
+
+        "Kamu adalah Nata, asisten keuangan AI WhatsApp. Status akun user ini: **Coming Soon (Post-Lebaran)**.
+
+        DATA USER:
+        - Nama: ${nama}
+        - Bisnis: ${namaBisnis || 'bisnis kerenmu'}
+        - Pesan User: "${pesan || 'Halo Nata'}"
+
+        TUGAS:
+        1. Berikan respon 'Gatekeeper' yang menolak input data secara halus karena sistem sedang kalibrasi kategori akuntansi (HPP & CapEx).
+        2. Gunakan persona 'aku/kamu': Singkat, to-the-point, dan sedikit jenaka.
+        3. WAJIB selipkan satu kalimat teasing/analisis singkat yang relevan dengan isi pesan atau nama bisnis user (misal: menebak tantangan HPP mereka).
+        4. Beritahu bahwa kuota 300 token mereka sedang disiapkan untuk rilis habis Lebaran.
+
+        ATURAN FORMATTING:
+        - Maksimal 4 kalimat.
+        - Gunakan format WhatsApp (*bold*).
+        - JANGAN sebut tanggal pasti.
+        - Akhiri dengan kalimat semangat yang 'Nata banget'.
+
+        CONTOH NADA: 'Lagi hitung HPP ya? Sabar, aku lagi meditasi biar nanti inputmu gak berantakan.'
+
+        Tulis hanya teks balasannya saja."
+        `;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    logger.verbose(`💬 Coming Soon message generated untuk ${nama || namaBisnis || 'user'}`);
+    return text;
+
+  } catch (error) {
+    logger.error('generateComingSoonMessage error:', error.message);
+    // Fallback ke pesan statis jika AI gagal
+    const sapaan = nama || namaBisnis || 'Kak';
+    return (
+      `⏳ Halo *${sapaan}*!\n\n` +
+      `Terima kasih sudah bergabung bersama *KalaStudioAI* 🙏\n\n` +
+      `Sistem Nata untuk akun kamu sedang dalam persiapan dan akan segera aktif. ` +
+      `Kami akan menghubungi kamu segera setelah siap.\n\n` +
+      `Mohon bersabar ya! 🚀`
+    );
+  }
+}

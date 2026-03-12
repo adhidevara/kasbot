@@ -1,7 +1,7 @@
 // src/modules/ai-engine/ai.listener.js
 import logger from '../../shared/logger.js';
 import bus from '../../shared/eventBus.js';
-import { processInput } from './ai.service.js';
+import { processInput, generateComingSoonMessage } from './ai.service.js';
 import {
     isUserRegistered,
     isInOnboarding,
@@ -47,7 +47,18 @@ bus.on('whatsapp.message_received', async (payload) => {
         return;
     }
 
-    // ─── STEP 1b: SAPAAN PERTAMA untuk user VIP (register via API) ───
+    // ─── STEP 1b: COMING SOON — user terflagging, sistem belum aktif ───
+    if (userProfile.is_comingsoon) {
+        const comingSoonText = await generateComingSoonMessage({
+            nama:       userProfile.nama,
+            namaBisnis: userProfile.nama_bisnis,
+            pesan:      text,
+        });
+        bus.emit('whatsapp.send_message', { to: sender, text: comingSoonText });
+        return;
+    }
+
+    // ─── STEP 1c: SAPAAN PERTAMA untuk user VIP (register via API) ───
     if (!userProfile.welcomed) {
         const nama = userProfile.nama || userProfile.nama_bisnis || 'Kak';
         const namaBisnis = userProfile.nama_bisnis ? ` untuk *${userProfile.nama_bisnis}*` : '';
