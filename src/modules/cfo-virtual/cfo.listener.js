@@ -94,5 +94,6 @@ function formatCFOResponse(result) {
         `\n💵 *Total:* Rp${result.total.toLocaleString('id-ID')}` +
         `${tokenInfo}`;
 
-    return `${pesanNata}${detail}`;
+    // return `${pesanNata}${detail}`;
+    return `${pesanNata}${tokenInfo}`;
 }

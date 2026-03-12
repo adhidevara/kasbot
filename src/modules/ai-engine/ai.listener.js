@@ -6,10 +6,12 @@ import {
     isUserRegistered,
     isInOnboarding,
     startOnboarding,
-    processOnboarding
+    processOnboarding,
+    invalidateUserCache
 } from '../onboarding/onboarding.service.js';
 import { checkTransaksiLimit, deductToken } from '../tier/tier.service.js';
 import { isReportCommand, handleReportMenu, isChatQuery } from '../report/report.listener.js';
+import { db } from '../../config/db.js';
 
 logger.info("👂 AI Listener: Aktif dan menunggu sinyal dari WhatsApp...");
 
@@ -42,6 +44,29 @@ bus.on('whatsapp.message_received', async (payload) => {
             const welcomeMsg = await startOnboarding(nomorWa);
             bus.emit('whatsapp.send_message', { to: sender, text: welcomeMsg });
         }
+        return;
+    }
+
+    // ─── STEP 1b: SAPAAN PERTAMA untuk user VIP (register via API) ───
+    if (!userProfile.welcomed) {
+        const nama = userProfile.nama || userProfile.nama_bisnis || 'Kak';
+        const namaBisnis = userProfile.nama_bisnis ? ` untuk *${userProfile.nama_bisnis}*` : '';
+        const sisaToken = userProfile.token_balance ?? 15;
+
+        bus.emit('whatsapp.send_message', {
+            to: sender,
+            text:
+                `Halo *${nama}*! Salam kenal, aku *Nata* dari *KalaStudioAI* 👋\n\n` +
+                `Aku sudah siap jadi asisten keuangan pribadi kamu${namaBisnis}.\n\n` +
+                `Kamu punya *${sisaToken} Token* buat mencatat transaksi pakai *Teks*, *Voice Note*, atau *Foto Nota* — aku yang catat otomatis.\n\n` +
+                `Yuk, coba kirim transaksi pertama kamu sekarang!\n` +
+                `_Contoh: "jual ayam 10 ekor @50000" atau "beli pakan 50 kg @15000"_`
+        });
+
+        await db.from('pengguna')
+            .update({ welcomed: true, updated_at: new Date().toISOString() })
+            .eq('nomor_wa', nomorWa);
+        await invalidateUserCache(nomorWa);
         return;
     }
 
