@@ -217,6 +217,7 @@ export async function processOnboarding(nomorWa, text) {
             kategori_bisnis: state.kategori_bisnis,
             bahan_baku: bahanArray,
             onboarding_selesai: true,
+            welcomed: true,
             plan: 'trial',
             trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             token_balance: 15,
