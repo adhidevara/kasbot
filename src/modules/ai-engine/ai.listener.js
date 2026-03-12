@@ -50,9 +50,10 @@ bus.on('whatsapp.message_received', async (payload) => {
     // ─── STEP 1b: COMING SOON — user terflagging, sistem belum aktif ───
     if (userProfile.is_comingsoon) {
         const comingSoonText = await generateComingSoonMessage({
-            nama:       userProfile.nama,
-            namaBisnis: userProfile.nama_bisnis,
-            pesan:      text,
+            nama:           userProfile.nama,
+            namaBisnis:     userProfile.nama_bisnis,
+            kategoriBisnis: userProfile.kategori_bisnis,
+            pesan:          text,
         });
         bus.emit('whatsapp.send_message', { to: sender, text: comingSoonText });
         return;

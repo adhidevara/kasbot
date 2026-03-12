@@ -105,7 +105,7 @@ export async function processInput(text, context) {
 }
 
 // ─── Generate pesan Coming Soon (dinamis via AI) ──────────────────────────────
-export async function generateComingSoonMessage({ nama, namaBisnis, pesan }) {
+export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisnis, pesan }) {
   try {
     const model = genAI.getGenerativeModel({
       model: GEMINI_MODEL,
@@ -120,7 +120,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, pesan }) {
         DATA USER:
         - Nama: ${nama}
         - Bisnis: ${namaBisnis || 'bisnis kerenmu'}
-        - Kategori Bisnis: ${context.kategori}
+        - Kategori Bisnis: ${kategoriBisnis || 'Umum'}
         - Pesan Terakhir: "${pesan || 'Halo Nata'}"
 
         TUGAS:
