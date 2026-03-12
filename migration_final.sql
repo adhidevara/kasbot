@@ -7,14 +7,22 @@
 -- 1. Tabel pengguna
 CREATE TABLE IF NOT EXISTS pengguna (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nomor_wa            TEXT UNIQUE NOT NULL,
+    nomor_wa            TEXT UNIQUE,
+    nama                TEXT,
     nama_bisnis         TEXT,
+    email               TEXT UNIQUE,
+    password_hash       TEXT,
     kategori_bisnis     TEXT,
     bahan_baku          TEXT[],
+    alamat              TEXT,
     threshold_alert     JSONB DEFAULT '{}'::jsonb,
     onboarding_selesai  BOOLEAN DEFAULT FALSE,
+    welcomed            BOOLEAN DEFAULT FALSE,
     plan                TEXT DEFAULT 'trial',
     trial_ends_at       TIMESTAMPTZ,
+    token_balance       NUMERIC DEFAULT 0,
+    token_total         NUMERIC DEFAULT 0,
+    token_reset_at      TIMESTAMPTZ,
     created_at          TIMESTAMPTZ DEFAULT NOW(),
     updated_at          TIMESTAMPTZ DEFAULT NOW()
 );
@@ -28,6 +36,7 @@ CREATE TABLE IF NOT EXISTS transaksi (
     tipe            VARCHAR CHECK (tipe IN ('pemasukan', 'pengeluaran')),
     sumber_input    TEXT CHECK (sumber_input IN ('teks', 'suara', 'foto', 'whatsapp')),
     deskripsi       TEXT,
+    pesan_ai        TEXT,
     transaksi_at    TIMESTAMPTZ DEFAULT NOW(),
     ai_confidence   NUMERIC(3,2),
     kategori        TEXT,
@@ -58,8 +67,21 @@ CREATE TABLE IF NOT EXISTS penyesuaian_transaksi (
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 5. Tabel onboarding_state (persistent, bukan in-memory)
+CREATE TABLE IF NOT EXISTS onboarding_state (
+    nomor_wa    TEXT PRIMARY KEY,
+    state       JSONB NOT NULL,
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Tabel report_state (persistent awaiting periode)
+CREATE TABLE IF NOT EXISTS report_state (
+    nomor_wa    TEXT PRIMARY KEY,
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ============================================================
--- INDEX untuk performa query
+-- INDEX
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_transaksi_user_date
     ON transaksi (pengguna_id, transaksi_at DESC);
@@ -76,31 +98,26 @@ CREATE INDEX IF NOT EXISTS idx_detail_item_user
 CREATE INDEX IF NOT EXISTS idx_penyesuaian_transaksi
     ON penyesuaian_transaksi (transaksi_id);
 
--- ============================================================
--- SELESAI
--- ============================================================
-
--- ============================================================
--- TAMBAHAN: Tabel onboarding_state (persistent, bukan in-memory)
--- ============================================================
-CREATE TABLE IF NOT EXISTS onboarding_state (
-    nomor_wa    TEXT PRIMARY KEY,
-    state       JSONB NOT NULL,
-    updated_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Auto-hapus state yang lebih dari 1 hari (expired/abandoned)
 CREATE INDEX IF NOT EXISTS idx_onboarding_updated
     ON onboarding_state (updated_at);
 
--- ============================================================
--- TAMBAHAN: Tabel report_state (persistent awaiting periode)
--- ============================================================
-CREATE TABLE IF NOT EXISTS report_state (
-    nomor_wa    TEXT PRIMARY KEY,
-    updated_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Auto-hapus state lebih dari 10 menit (user tidak jadi pilih)
 CREATE INDEX IF NOT EXISTS idx_report_state_updated
     ON report_state (updated_at);
+
+CREATE INDEX IF NOT EXISTS idx_pengguna_email
+    ON pengguna (email)
+    WHERE email IS NOT NULL;
+
+-- ============================================================
+-- PATCH: Jalankan ini jika DB sudah existing (bukan fresh install)
+-- Aman dijalankan berkali-kali (IF NOT EXISTS)
+-- ============================================================
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS nama           TEXT;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS email          TEXT UNIQUE;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS password_hash  TEXT;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS alamat         TEXT;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS welcomed       BOOLEAN DEFAULT FALSE;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS token_balance  NUMERIC DEFAULT 0;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS token_total    NUMERIC DEFAULT 0;
+ALTER TABLE pengguna ADD COLUMN IF NOT EXISTS token_reset_at TIMESTAMPTZ;
+ALTER TABLE transaksi ADD COLUMN IF NOT EXISTS pesan_ai      TEXT;
