@@ -44,6 +44,7 @@ export async function authRoutes(fastify) {
             nomor_wa,
             kategori_bisnis,
             bahan_baku,
+            alamat,
             plan = 'trial',
         } = request.body || {};
 
@@ -110,6 +111,7 @@ export async function authRoutes(fastify) {
             nomor_wa:           nomorFormatted,
             kategori_bisnis,
             bahan_baku:         finalBahanBaku,
+            alamat:             alamat || null,
             onboarding_selesai: true,
             plan,
             trial_ends_at:      trialEnd.toISOString(),
@@ -151,6 +153,7 @@ export async function authRoutes(fastify) {
                 email:           user.email,
                 nomor_wa:        user.nomor_wa,
                 kategori_bisnis: user.kategori_bisnis,
+                alamat:          user.alamat,
                 plan:            user.plan,
                 token_balance:   user.token_balance,
                 trial_ends_at:   user.trial_ends_at,
@@ -225,6 +228,7 @@ export async function authRoutes(fastify) {
                 email:          user.email,
                 nomor_wa:       user.nomor_wa,
                 kategori_bisnis: user.kategori_bisnis,
+                alamat:         user.alamat,
                 plan:           user.plan,
                 token_balance:  user.plan === 'professional' ? null : (user.token_balance ?? 0),
                 trial_ends_at:  user.trial_ends_at,

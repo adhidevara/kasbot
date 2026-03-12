@@ -190,7 +190,6 @@
       <div class="nav-section">
         <div class="nav-section-title">Pengguna</div>
         <a href="#user-list" class="nav-item"><span class="nav-method method-get">GET</span>List Pengguna</a>
-        <a href="#user-register" class="nav-item"><span class="nav-method method-post">POST</span>Register</a>
         <a href="#user-profile" class="nav-item"><span class="nav-method method-get">GET</span>Profil</a>
         <a href="#user-update" class="nav-item"><span class="nav-method method-patch">PATCH</span>Update Profil</a>
         <a href="#user-plan" class="nav-item"><span class="nav-method method-get">GET</span>Plan & Kuota</a>
@@ -269,6 +268,8 @@
       <!-- ══════════════════════════════════════════ -->
       <!-- 01. AUTENTIKASI -->
       <!-- ══════════════════════════════════════════ -->
+       <!-- 01. AUTH -->
+      <!-- ══════════════════════════════════════════ -->
       <section class="section" id="auth-section">
         <div class="section-header">
           <span class="section-number">01</span>
@@ -324,8 +325,9 @@
         <span class="c-blue">"email"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="28494c4041684d50494558444d064b4745">[email&#160;protected]</a>"</span>,
         <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ccfafef4fdfefff8f9fafbf4f5fc8cbfe2bba4adb8bfadbcbce2a2a9b8">[email&#160;protected]</a>"</span>,
         <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"F&B"</span>,
+        <span class="c-blue">"alamat"</span>: <span class="c-green">"Jl. Mawar No. 10, Surabaya"</span>,
         <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
-        <span class="c-blue">"token_balance"</span>: <span class="c-orange">50</span>,
+        <span class="c-blue">"token_balance"</span>: <span class="c-orange">15</span>,
         <span class="c-blue">"trial_ends_at"</span>: <span class="c-green">"2026-03-24T06:46:38.441+00:00"</span>
     }
 }</pre></div></div></div>
@@ -350,9 +352,11 @@
                 <tr><td class="field-name">nama_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nama Bisnis pengguna</td></tr>
                 <tr><td class="field-name">email</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Alamat email pengguna</td></tr>
                 <tr><td class="field-name">password</td><td class="field-type">string (Bcrypt)</td><td><span class="field-required">required</span></td><td class="field-desc">Password untuk autentikasi</td></tr>
+                <tr><td class="field-name">kategori_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Kategori usaha. Contoh: <code style="color:var(--gold-light)">Kuliner/F&B</code></td></tr>
                 <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Format internasional tanpa +. Contoh: <code style="color:var(--gold-light)">628123456789</code></td></tr>
                 <tr><td class="field-name">bahan_baku</td><td class="field-type">Array</td><td><span class="field-optional">Opsional</span></td><td class="field-desc">Jenis bahan baku yang digunakan</td></tr>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Plan yang dipilih, Default : "trial"</td></tr>
+                <tr><td class="field-name">alamat</td><td class="field-type">string</td><td><span class="field-optional">Opsional</span></td><td class="field-desc">Alamat usaha pengguna</td></tr>
+                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Plan yang dipilih. Default: <code style="color:var(--gold-light)">trial</code></td></tr>
               </tbody>
             </table>
             <div class="tabs">
@@ -370,6 +374,7 @@
     "password": "passwordTersembunyi123",
     "nomor_wa": "6281234567890",
     "kategori_bisnis": "F&B",
+    "alamat": "Jl. Mawar No. 10, Surabaya",
     "plan": "trial",
     "bahan_baku": [
       "Biji Kopi Arabika",
@@ -390,8 +395,9 @@
         <span class="c-blue">"email"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ceafaaa6a78eabb6afa3bea2abe0ada1a3">[email&#160;protected]</a>"</span>,
         <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c1f7f3f9f0f3f2f5f4f7f6f9f8f181b2efb6a9a0b5b2a0b1b1efafa4b5">[email&#160;protected]</a>"</span>,
         <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"F&B"</span>,
+        <span class="c-blue">"alamat"</span>: <span class="c-green">"Jl. Mawar No. 10, Surabaya"</span>,
         <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
-        <span class="c-blue">"token_balance"</span>: <span class="c-orange">50</span>,
+        <span class="c-blue">"token_balance"</span>: <span class="c-orange">15</span>,
         <span class="c-blue">"trial_ends_at"</span>: <span class="c-green">"2026-03-24T06:46:38.441+00:00"</span>
     }
 }</pre></div></div></div>
@@ -649,59 +655,6 @@
           </div>
         </div>
 
-        <!-- Register -->
-        <div class="endpoint" id="user-register">
-          <div class="endpoint-header" onclick="toggleEndpoint(this)">
-            <span class="method-badge badge-post">POST</span>
-            <span class="endpoint-path">/api/users/register</span>
-            <span class="endpoint-desc">Daftarkan pengguna baru via dashboard</span>
-            <span class="endpoint-toggle">▾</span>
-          </div>
-          <div class="endpoint-body">
-            <div class="auth-required">🔐 Memerlukan autentikasi</div>
-            <div class="admin-only">👑 Admin only</div>
-            <p class="field-desc" style="font-size:0.8rem;color:var(--white-muted);margin-bottom:0.75rem;">Mendaftarkan pengguna baru tanpa harus melalui alur onboarding WhatsApp bot. Parameter mengikuti field onboarding.</p>
-            <div class="sub-label">Request Body</div>
-            <table class="field-table">
-              <thead><tr><th>Field</th><th>Tipe</th><th>Wajib</th><th>Keterangan</th></tr></thead>
-              <tbody>
-                <tr><td class="field-name">nomor_wa</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Format internasional. Contoh: <code style="color:var(--gold-light)">628123456789</code></td></tr>
-                <tr><td class="field-name">nama_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Nama usaha</td></tr>
-                <tr><td class="field-name">kategori_bisnis</td><td class="field-type">string</td><td><span class="field-required">required</span></td><td class="field-desc">Kuliner, Retail, Jasa, Manufaktur, dll.</td></tr>
-                <tr><td class="field-name">bahan_baku</td><td class="field-type">array</td><td><span class="field-optional">optional</span></td><td class="field-desc">Daftar bahan baku utama. Contoh: <code style="color:var(--gold-light)">["beras","minyak"]</code></td></tr>
-                <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">Default: <code style="color:var(--gold-light)">trial</code>. Nilai: <code style="color:var(--gold-light)">trial | starter | business | professional</code></td></tr>
-                <tr><td class="field-name">trial_ends_at</td><td class="field-type">string</td><td><span class="field-optional">optional</span></td><td class="field-desc">ISO date. Default: 14 hari dari sekarang</td></tr>
-              </tbody>
-            </table>
-            <div class="tabs">
-              <button class="tab-btn active-req" onclick="switchTab(this,'ureg-req')">📤 Request</button>
-              <button class="tab-btn" onclick="switchTab(this,'ureg-201')">✅ 201 Created</button>
-              <button class="tab-btn" onclick="switchTab(this,'ureg-409')">❌ 409 Conflict</button>
-            </div>
-            <div id="ureg-req" class="tab-panel active"><div class="code-block"><div class="code-header"><span class="code-lang">curl</span><button class="copy-btn" onclick="copyCode(this)">Salin</button></div><div class="code-content"><pre><span class="c-gold">curl</span> -X POST kalastudio-prod.up.railway.app/api/users/register \
-  -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span> \
-  -H <span class="c-green">"Content-Type: application/json"</span> \
-  -d <span class="c-green">'{
-    "nomor_wa": "628123456789",
-    "nama_bisnis": "Warung Pak Anto",
-    "kategori_bisnis": "Kuliner",
-    "bahan_baku": ["beras", "minyak goreng"],
-    "plan": "trial"
-  }'</span></pre></div></div></div>
-            <div id="ureg-201" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
-  <span class="c-blue">"success"</span>: <span class="c-orange">true</span>,
-  <span class="c-blue">"message"</span>: <span class="c-green">"Pengguna berhasil didaftarkan"</span>,
-  <span class="c-blue">"user"</span>: {
-    <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"628123456789"</span>,
-    <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Warung Pak Anto"</span>,
-    <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
-    <span class="c-blue">"trial_ends_at"</span>: <span class="c-green">"2026-03-22T00:00:00Z"</span>
-  }
-}</pre></div></div></div>
-            <div id="ureg-409" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{ <span class="c-blue">"success"</span>: <span class="c-orange">false</span>, <span class="c-blue">"message"</span>: <span class="c-green">"Nomor WA sudah terdaftar"</span> }</pre></div></div></div>
-          </div>
-        </div>
-
         <!-- Profile -->
         <div class="endpoint" id="user-profile">
           <div class="endpoint-header" onclick="toggleEndpoint(this)">
@@ -721,10 +674,12 @@
   -H <span class="c-green">"Authorization: Bearer &lt;token&gt;"</span></pre></div></div></div>
             <div id="up-200" class="tab-panel"><div class="code-block"><div class="code-header"><span class="code-lang">json</span></div><div class="code-content"><pre>{
   <span class="c-blue">"nomor_wa"</span>: <span class="c-green">"628123456789"</span>,
+  <span class="c-blue">"nama"</span>: <span class="c-green">"Pak Anto"</span>,
   <span class="c-blue">"nama_bisnis"</span>: <span class="c-green">"Warung Pak Anto"</span>,
   <span class="c-blue">"kategori_bisnis"</span>: <span class="c-green">"Kuliner"</span>,
   <span class="c-blue">"bahan_baku"</span>: [<span class="c-green">"beras"</span>, <span class="c-green">"minyak goreng"</span>],
-  <span class="c-blue">"plan"</span>: <span class="c-green">"basic"</span>,
+  <span class="c-blue">"alamat"</span>: <span class="c-green">"Jl. Mawar No. 10, Surabaya"</span>,
+  <span class="c-blue">"plan"</span>: <span class="c-green">"trial"</span>,
   <span class="c-blue">"trial_ends_at"</span>: <span class="c-orange">null</span>,
   <span class="c-blue">"onboarding_selesai"</span>: <span class="c-orange">true</span>,
   <span class="c-blue">"created_at"</span>: <span class="c-green">"2026-03-01T08:00:00Z"</span>
@@ -747,9 +702,11 @@
             <table class="field-table">
               <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
               <tbody>
+                <tr><td class="field-name">nama</td><td class="field-type">string</td><td class="field-desc">Nama pengguna</td></tr>
                 <tr><td class="field-name">nama_bisnis</td><td class="field-type">string</td><td class="field-desc">Nama usaha baru</td></tr>
                 <tr><td class="field-name">kategori_bisnis</td><td class="field-type">string</td><td class="field-desc">Kategori bisnis baru</td></tr>
                 <tr><td class="field-name">bahan_baku</td><td class="field-type">array</td><td class="field-desc">Daftar bahan baku</td></tr>
+                <tr><td class="field-name">alamat</td><td class="field-type">string</td><td class="field-desc">Alamat usaha pengguna</td></tr>
                 <tr><td class="field-name">threshold_alert</td><td class="field-type">object</td><td class="field-desc">Batas alert anomali. Contoh: <code style="color:var(--gold-light)">{"pengeluaran": 500000}</code></td></tr>
               </tbody>
             </table>

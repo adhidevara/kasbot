@@ -119,7 +119,7 @@ export async function userRoutes(fastify) {
         if (!user) return reply.code(404).send({ success: false, message: 'Pengguna tidak ditemukan' });
         if (!checkOwnership(request.user, user)) return reply.code(403).send({ success: false, message: 'Akses ditolak' });
 
-        const allowedFields = ['nama_bisnis', 'kategori_bisnis', 'bahan_baku', 'threshold_alert'];
+        const allowedFields = ['nama', 'nama_bisnis', 'kategori_bisnis', 'bahan_baku', 'threshold_alert', 'alamat'];
         const updateData = {};
         for (const field of allowedFields) {
             if (request.body?.[field] !== undefined) updateData[field] = request.body[field];

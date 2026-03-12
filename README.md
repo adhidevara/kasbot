@@ -127,7 +127,7 @@ docker run -d -p 6379:6379 redis:alpine
 ```
 
 ### 4. Setup Database
-Jalankan `migration_final.sql` di **Supabase → SQL Editor**, lalu jalankan juga `migration_token.sql` untuk token system.
+Jalankan `migration_final.sql` di **Supabase → SQL Editor**. File ini mencakup seluruh schema termasuk token system. Jika DB sudah ada sebelumnya, bagian PATCH di bawah file tersebut aman dijalankan ulang (`IF NOT EXISTS`).
 
 ### 5. Jalankan
 
@@ -207,6 +207,88 @@ Token **tidak dikurangi** jika AI gagal mengenali transaksi.
 | Business | Rp 249.000/bulan | 1.000 token | ✅ | ✅ |
 
 Token di-reset manual oleh admin. Top-up tersedia via API admin.
+
+---
+
+## 🔐 Auth API
+
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| POST | `/api/auth/register` | Daftarkan user baru (bypass onboarding WA) |
+| POST | `/api/auth/login` | Login via email atau nomor WA |
+| POST | `/api/auth/set-password` | Tambah email & password untuk akun WA onboarding |
+| POST | `/api/auth/change-password` | Ganti password |
+
+### POST /api/auth/register
+
+Digunakan untuk mendaftarkan user secara langsung (misal user beta / jalur VIP) tanpa perlu onboarding via WhatsApp. User yang didaftarkan lewat endpoint ini akan langsung menerima sapaan personal dari Nata saat pertama kali chat.
+
+```json
+{
+  "nama": "Budi Santoso",
+  "nama_bisnis": "Warung Budi",
+  "email": "budi@email.com",
+  "password": "password123",
+  "nomor_wa": "628123456789",
+  "kategori_bisnis": "Warung/Toko Kelontong",
+  "bahan_baku": ["beras", "minyak", "gula"],
+  "alamat": "Jl. Mawar No. 10, Surabaya",
+  "plan": "trial"
+}
+```
+
+**Field wajib:** `nama`, `nama_bisnis`, `email`, `password`, `kategori_bisnis`
+**Field opsional:** `nomor_wa`, `bahan_baku`, `alamat`, `plan` (default: `trial`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "token": "<jwt>",
+  "user": {
+    "id": "uuid",
+    "nama": "Budi Santoso",
+    "nama_bisnis": "Warung Budi",
+    "email": "budi@email.com",
+    "nomor_wa": "628123456789@s.whatsapp.net",
+    "kategori_bisnis": "Warung/Toko Kelontong",
+    "alamat": "Jl. Mawar No. 10, Surabaya",
+    "plan": "trial",
+    "token_balance": 15,
+    "trial_ends_at": "..."
+  }
+}
+```
+
+### POST /api/auth/login
+
+```json
+{ "email": "budi@email.com", "password": "password123" }
+// atau
+{ "nomor_wa": "628123456789", "password": "password123" }
+```
+
+---
+
+## 👤 User API
+
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| GET | `/api/users` | List semua pengguna (admin) |
+| POST | `/api/users/register` | Daftarkan pengguna via WA saja (admin, tanpa email/password) |
+| GET | `/api/users/:nomorWa` | Profil pengguna |
+| PATCH | `/api/users/:nomorWa` | Update profil pengguna |
+| GET | `/api/users/:nomorWa/plan` | Status plan & kuota token |
+| PATCH | `/api/users/:nomorWa/plan` | Upgrade/downgrade plan (admin) |
+| DELETE | `/api/users/:nomorWa` | Hapus pengguna (admin) |
+
+### PATCH /api/users/:nomorWa
+
+Field yang dapat diupdate: `nama`, `nama_bisnis`, `kategori_bisnis`, `bahan_baku`, `threshold_alert`, `alamat`
+
+```json
+{ "alamat": "Jl. Melati No. 5, Bandung" }
+```
 
 ---
 
