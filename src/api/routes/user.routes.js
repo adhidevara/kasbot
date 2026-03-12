@@ -227,7 +227,7 @@ export async function userRoutes(fastify) {
     // POST /api/users/:nomorWa/cache/invalidate
     fastify.post('/:nomorWa/cache/invalidate', { preHandler: [verifyToken] }, async (request, reply) => {
         const { nomorWa } = request.params;
-        await invalidateUserCache(nomorWa);
+        await invalidateUserCache(normalizeNomorWa(nomorWa));
         return reply.send({ success: true, message: 'Cache berhasil dihapus' });
     });
 }

@@ -43,7 +43,7 @@ export async function detectAnomali(penggunaId, transaksiNominal, tipe) {
 
         if (histori.length < 3) return { isAnomali: false }; // Data belum cukup
 
-        const values = histori.map(t => t.total);
+        const values = histori.map(t => Number(t.total));
         const stats = calcStats(values);
 
         if (!stats || stats.std === 0) return { isAnomali: false };

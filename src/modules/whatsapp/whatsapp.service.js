@@ -27,6 +27,7 @@ function resolveNomorWa(msgKey) {
 export function getWAStatus() { return waStatus; }
 export function getCurrentQR() { return currentQR; }
 
+// Untuk API internal (misal dari route /api/wa/send), nomor bisa dalam format "81234567890" atau "6281234567890" atau "
 export async function sendWAMessage(to, text) {
     if (!sockInstance) throw new Error('WhatsApp belum terkoneksi');
     const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
@@ -114,6 +115,7 @@ export async function startWA() {
         });
 
         // ─── Pesan Masuk ───────────────────────────────────────────────────────
+        // Untuk efisiensi, hanya proses pesan baru (upsertType='notify') yang belum diproses oleh Baileys
         sock.ev.on('messages.upsert', async ({ messages, type: upsertType }) => {
             if (upsertType !== 'notify') return;
 

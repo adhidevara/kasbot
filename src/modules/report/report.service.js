@@ -192,7 +192,7 @@ async function generateTeasing(tipe, total, periode, kategori_bisnis, nama, tipe
 
             Respond ONLY dengan JSON: {"teasing": "..."}`;
 
-        console.log(`🤖 Prompt Gemini Pemasukan / Pengeluaran:\n${prompt}`);
+        logger.verbose(`🤖 Prompt Gemini Pemasukan / Pengeluaran:\n${prompt}`);
         const result = await model.generateContent(prompt);
         const raw = result.response.text();
         const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);

@@ -268,7 +268,8 @@ export async function authRoutes(fastify) {
         let updateQ = db.from('pengguna').update({ email, password_hash, updated_at: new Date().toISOString() });
         if (userId) updateQ = updateQ.eq('id', userId);
         else if (userNomor) updateQ = updateQ.eq('nomor_wa', userNomor);
-        await updateQ;
+        const { error: updateErr } = await updateQ;
+        if (updateErr) return reply.code(500).send({ success: false, message: updateErr.message });
 
         if (userNomor) await invalidateUserCache(userNomor);
 
@@ -316,7 +317,8 @@ export async function authRoutes(fastify) {
         else if (nomor_wa) updateQuery = updateQuery.eq('nomor_wa', nomor_wa);
         else updateQuery = updateQuery.eq('email', email);
 
-        await updateQuery;
+        const { error: updateErr2 } = await updateQuery;
+        if (updateErr2) return reply.code(500).send({ success: false, message: updateErr2.message });
 
         return reply.send({ success: true, message: 'Password berhasil diubah' });
     });

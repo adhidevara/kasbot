@@ -140,9 +140,11 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
         };
     }
 
-    const sisaSetelah = balance - tokenDibutuhkan;
-    const warningToken = sisaSetelah <= 10
-        ? `⚠️ *Sisa token Anda: ${sisaSetelah}*. Segera hubungi admin untuk top-up.`
+    const sisaSetelah  = balance - tokenDibutuhkan;
+    const tokenTotal   = access.user?.token_total ?? balance;
+    const threshold    = Math.max(10, Math.floor(tokenTotal * 0.10));
+    const warningToken = sisaSetelah <= threshold
+        ? `⚠️ *Sisa token Anda: ${sisaSetelah} dari ${tokenTotal}*. Segera hubungi admin untuk top-up.`
         : null;
 
     return {
