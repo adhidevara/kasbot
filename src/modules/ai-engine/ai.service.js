@@ -87,7 +87,7 @@ export async function processInput(text, context) {
           {"nama": string, "nilai": number, "tipe": "potongan" | "tambahan"}
         ],
         "pesan_konfirmasi": string
-      }
+      } 
     `;
 
     const result = await model.generateContent(prompt);
@@ -133,6 +133,9 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
         2. Gunakan persona 'aku/kamu': Singkat, to-the-point, dan sedikit jenaka.
         3. WAJIB selipkan satu kalimat teasing/analisis singkat yang relevan dengan isi pesan atau nama bisnis user (misal: menebak tantangan HPP mereka).
         4. Beritahu bahwa kuota 300 token mereka sedang disiapkan untuk rilis habis Lebaran.
+        5. Jangan sebut tanggal pasti, cukup bilang "segera setelah Lebaran".
+        6. Akhiri dengan kalimat semangat yang 'Nata banget' untuk menjaga antusiasme user.
+        7. Jika Kategori Bisnis = Keperluan Pribadi maka panggil saja namanya tidak perlu nama bisnisnya dan jangan ada istilah keuangan teknis yang susah dipahami orang awam.
 
         ATURAN FORMATTING:
         - Maksimal 4 kalimat.
