@@ -211,7 +211,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
           1. Jangan benar-benar mencatat transaksi
           2. Berikan respon gatekeeper yang natural
           3. Jelaskan fitur sedang disiapkan
-          4. WAJIB menyebut bahwa user akan mendapat *300 token*
+          4. WAJIB menyebut bahwa user akan mendapat 300 token
           5. Katakan fitur aktif *setelah Lebaran*
           6. Jangan sebut tanggal pasti
           7. Tutup dengan kalimat hangat ala Nata
@@ -224,7 +224,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
 
           Gunakan variasi kalimat seperti:
 
-          - "Nanti pas rilis kamu langsung dapat *300 token* buat mulai."
+          - "Nanti pas rilis kamu langsung dapat 300 token buat mulai."
           - "300 token lagi aku siapin buat kamu pakai."
           - "Tenang, nanti kamu dapat jatah awal 300 token."
           - "Begitu aktif *setelah Lebaran, kamu sudah punya **300 token* buat dipakai."
