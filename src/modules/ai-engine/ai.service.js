@@ -105,7 +105,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
       generationConfig: { responseMimeType: "text/plain" }
     });
 
-    const namaDisplay     = nama           || namaBisnis     || 'kamu';
+    const namaDisplay     = nama           || 'kamu';
     const bisnisDisplay   = namaBisnis     || 'bisnis kamu';
     const kategoriDisplay = kategoriBisnis || 'Umum';
     const pesanDisplay    = pesan          || '(tidak ada pesan)';
@@ -220,13 +220,13 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
 
           TOKEN REMINDER (WAJIB)
 
-          Setiap respon HARUS menyebutkan bahwa user akan mendapat *300 token*.
+          Setiap respon HARUS menyebutkan bahwa user akan mendapat 300 token.
 
           Gunakan variasi kalimat seperti:
 
           - "Nanti pas rilis kamu langsung dapat *300 token* buat mulai."
-          - "*300 token* lagi aku siapin buat kamu pakai."
-          - "Tenang, nanti kamu dapat jatah awal *300 token*."
+          - "300 token lagi aku siapin buat kamu pakai."
+          - "Tenang, nanti kamu dapat jatah awal 300 token."
           - "Begitu aktif *setelah Lebaran, kamu sudah punya **300 token* buat dipakai."
 
           ------------------------------------------------
