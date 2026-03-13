@@ -129,20 +129,19 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
           1. JIKA KATEGORI = 'KEPERLUAN PRIBADI'
 
           MASUK:
-          - Gajian Utama
-          - Duit Sampingan
-          - Rezeki Nomplok
+          - Gaji
+          - Uang Tambahan
+          - Tidak Terduga
 
           KELUAR:
           - Kewajiban
           - Buat Hidup
-          - Jajan & Senang-senang
-          - Khilaf
+          - Uang Jajan
           - Bantu Sesama
 
           MASA DEPAN:
-          - Celengan Target
-          - Uang Darurat
+          - Tabungan Impian
+          - Dana Darurat
           - Investasi/Aset Produktif
 
 
@@ -150,14 +149,14 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
 
           Gunakan kategori:
 
-          - Belanja Alat atau Aset
-          - Biaya Rutin atau Operasional
-          - Modal Stok atau Jualan
-          - Uang Masuk atau Omzet
-          - Untung Bersih atau Cuan
+          - Belanja Aset
+          - Biaya Operasional
+          - Modal Jualan
+          - Omzet
+          - Cuan
           - Utang
           - Piutang
-          - Modal Sendiri
+          - Modal
 
           Jika kategori bisnis → boleh sebut Nama Bisnis.
 
