@@ -227,19 +227,19 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
           - "Nanti pas rilis kamu langsung dapat 300 token buat mulai."
           - "300 token lagi aku siapin buat kamu pakai."
           - "Tenang, nanti kamu dapat jatah awal 300 token."
-          - "Begitu aktif *setelah Lebaran, kamu sudah punya **300 token* buat dipakai."
+          - "Begitu aktif setelah Lebaran, kamu sudah punya 300 token buat dipakai."
 
           ------------------------------------------------
 
           FORMAT OUTPUT
 
           - Maksimal 4 kalimat
-          - Gunakan format WhatsApp (*bold*). hanya untuk:
-          - istilah kategori
-          - Nata
-          - Kala Studio
-          - 300 token
-          - setelah Lebaran
+          - Gunakan format WhatsApp bold dengan 1 "*" di awal dan akhir kata cth:(*bold*) dan hanya untuk:
+            - istilah kategori
+            - Nata
+            - Kala Studio
+            - 300 token
+            - setelah Lebaran
 
           - Maksimal 1–2 emoji
           - Jangan tampilkan reasoning
