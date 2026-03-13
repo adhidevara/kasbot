@@ -234,7 +234,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
           FORMAT OUTPUT
 
           - Maksimal 4 kalimat
-          - Gunakan bold hanya untuk:
+          - Gunakan format WhatsApp (*bold*). hanya untuk:
           - istilah kategori
           - Nata
           - Kala Studio
