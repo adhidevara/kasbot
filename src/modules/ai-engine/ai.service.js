@@ -130,12 +130,13 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
 
       REFERENSI KATEGORI/KLASIFIKASI (WAJIB DIGUNAKAN):
       1. JIKA KATEGORI = 'KEPERLUAN PRIBADI':
-        - Jangan sebut nama bisnis, fokus ke nama user saja.
+        - Jangan sebut Nama Bisnis!, fokus ke nama user saja.
         - Masuk: Gajian Utama, Duit Sampingan, Rezeki Nomplok.
         - Keluar: Kewajiban, Buat Hidup, Jajan & Senang-senang (Gunakan 'Khilaf' jika relevan), Bantu Sesama.
         - Masa Depan: Celengan Target, Uang Darurat, Investasi/Aset Produktif.
 
       2. JIKA KATEGORI != 'KEPERLUAN PRIBADI' (BISNIS):
+	      - Boleh menyinggung Nama Bisnis dan atau Nama User
         - Gunakan: Belanja Alat atau Aset, Biaya Rutin atau Operasional, Modal Stok atau Jualan, Uang Masuk atau Omzet, Untung Bersih atau Cuan, Utang, Tagihan ke Orang atau Piutang, Modal Sendiri.
 
       TUGAS:
