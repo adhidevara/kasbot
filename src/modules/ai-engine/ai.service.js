@@ -150,7 +150,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
 
       ATURAN FORMATTING:
       - Maksimal 4 kalimat.
-      - GUNAKAN format WhatsApp (*bold*).
+      - GUNAKAN format WhatsApp (*bold*) untuk Istilah dari REFERENSI KATEGORI/KLASIFIKASI, "setelah lebaran", "Nata", "Kala Studio" dan sejenisnya saja.
       - JANGAN sebut tanggal pasti.
 
       Tulis hanya teks balasannya saja."
