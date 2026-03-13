@@ -3,30 +3,35 @@
 import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 import { isUserRegistered, invalidateUserCache } from '../onboarding/onboarding.service.js';
+import bus from '../../shared/eventBus.js';
 
 // ─── Plan config ──────────────────────────────────────────────────────────────
 const PLAN_CONFIG = {
     trial: {
         label:                'Trial',
         tokenAwal:            15,
+        warningThreshold:     5,   // warning saat sisa ≤5 token
         fiturAnomali:         false,
         fiturInsightMingguan: false,
     },
     starter: {
         label:                'Starter',
         tokenAwal:            300,
+        warningThreshold:     30,  // warning saat sisa ≤30 token (10%)
         fiturAnomali:         true,
         fiturInsightMingguan: false,
     },
     business: {
         label:                'Business',
         tokenAwal:            1000,
+        warningThreshold:     100, // warning saat sisa ≤100 token (10%)
         fiturAnomali:         true,
         fiturInsightMingguan: true,
     },
     professional: {
         label:                'Professional',
         tokenAwal:            null, // unlimited — tidak pakai token
+        warningThreshold:     0,   // unlimited, tidak ada warning
         fiturAnomali:         true,
         fiturInsightMingguan: true,
         unlimited:            true,
@@ -99,7 +104,6 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
             tokenBalance:     Infinity,
             tokenDibutuhkan:  0,
             sisaToken:        Infinity,
-            warningToken:     null,
         };
     }
 
@@ -140,21 +144,16 @@ export async function checkTransaksiLimit(nomorWa, sourceType = 'teks', durasiDe
         };
     }
 
-    const sisaSetelah  = balance - tokenDibutuhkan;
-    const tokenTotal   = access.user?.token_total ?? balance;
-    const threshold    = Math.max(10, Math.floor(tokenTotal * 0.10));
-    const warningToken = sisaSetelah <= threshold
-        ? `⚠️ *Sisa token Anda: ${sisaSetelah} dari ${tokenTotal}*. Segera hubungi admin untuk top-up.`
-        : null;
+    const sisaSetelah = balance - tokenDibutuhkan;
 
     return {
         allowed:          true,
         plan:             access.plan,
         config:           access.config,
+        user:             access.user,
         tokenBalance:     balance,
         tokenDibutuhkan,
         sisaToken:        sisaSetelah,
-        warningToken,
     };
 }
 
@@ -186,6 +185,23 @@ export async function deductToken(userId, nomorWa, jumlah = 1) {
         await invalidateUserCache(nomorWa);
 
         logger.verbose(`🪙 Deduct ${jumlah} token | sisa: ${newBalance} | ${nomorWa}`);
+
+        // ─── Cek threshold warning setelah deduction ──────────────────────────
+        const threshold          = access.config?.warningThreshold ?? 5;
+        const sudahDiperingatkan = access.user?.token_warning_sent === true;
+
+        if (!sudahDiperingatkan && threshold > 0 && newBalance <= threshold) {
+            bus.emit('whatsapp.send_message', {
+                to:   nomorWa,
+                text: `⚠️ *Sisa token kamu tinggal ${newBalance}!* Segera hubungi admin untuk top-up agar aktivitas pencatatan tidak terganggu.`,
+            });
+            await db.from('pengguna')
+                .update({ token_warning_sent: true, updated_at: new Date().toISOString() })
+                .eq('id', userId);
+            await invalidateUserCache(nomorWa);
+            logger.verbose(`⚠️ Token warning terkirim ke ${nomorWa} | sisa: ${newBalance}`);
+        }
+
         return { newBalance, deducted: jumlah };
 
     } catch (err) {
@@ -204,10 +220,11 @@ export async function topUpToken(nomorWa, jumlah) {
 
     await db.from('pengguna')
         .update({
-            token_balance:  newBalance,
-            token_total:    newTotal,
-            token_reset_at: new Date().toISOString(),
-            updated_at:     new Date().toISOString(),
+            token_balance:      newBalance,
+            token_total:        newTotal,
+            token_warning_sent: false, // reset warning — user sudah top-up
+            token_reset_at:     new Date().toISOString(),
+            updated_at:         new Date().toISOString(),
         })
         .eq('nomor_wa', nomorWa);
 

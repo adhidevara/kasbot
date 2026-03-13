@@ -112,21 +112,26 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
       generationConfig: { responseMimeType: "text/plain" }
     });
 
+    const namaDisplay     = nama       || namaBisnis || 'kamu';
+    const bisnisDisplay   = namaBisnis || 'bisnis kamu';
+    const kategoriDisplay = kategoriBisnis || 'Umum';
+    const pesanDisplay    = pesan      || '(tidak ada pesan)';
+
     const prompt = `
         ${PERSONA}
 
         Kamu adalah Nata, asisten keuangan AI dari Kala Studio. Status: Akun user BELUM AKTIF (Rilis Habis Lebaran).
 
         DATA USER:
-        - Nama: ${nama}
-        - Bisnis: ${namaBisnis || 'bisnis kerenmu'}
-        - Kategori: ${kategoriBisnis}
-        - Pesan User: ${pesan}
+        - Nama: ${namaDisplay}
+        - Bisnis: ${bisnisDisplay}
+        - Kategori: ${kategoriDisplay}
+        - Pesan User: ${pesanDisplay}
 
         TUGAS UTAMA:
-        1. SAPAAN: Jika Kategori != 'Keperluan Pribadi', sapa dengan 'Halo ${nama}!' dan sebutkan bisnisnya. Jika 'Keperluan Pribadi', sapa nama saja.
+        1. SAPAAN: Jika Kategori != 'Keperluan Pribadi', sapa dengan 'Halo ${namaDisplay}!' dan sebutkan bisnisnya. Jika 'Keperluan Pribadi', sapa nama saja.
         2. STATUS: Beritahu akun sedang disiapkan. Gunakan alasan: Aku lagi 'sekolah' biar otomatis bisa bedain mana 'Modal Stok/Jualan' dan mana 'Belanja Alat/Aset'.
-        3. TEASING (WAJIB): Analisis 'Pesan User'. Berikan satu kalimat tebakan jenaka menggunakan istilah: Modal, Tagihan, atau Cuan. 
+        3. TEASING (WAJIB): Analisis 'Pesan User'. Berikan satu kalimat tebakan jenaka menggunakan istilah: Modal, Tagihan, atau Cuan.
         4. HOOK: Ingatkan bahwa kuota 'Starter Pack' 300 token sudah aman di kantong Nata.
 
         ATURAN PERSONA (V3.2):
@@ -137,7 +142,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
 
         CONTOH RESPON RELEVAN:
         User chat: 'Beli semen 5 sak'
-        'Halo ${nama}! Wah, lagi ada proyek *Belanja Alat* atau renovasi buat *${namaBisnis}* nih? Sabar ya, aku lagi sekolah dulu biar nanti otomatis bisa bedain mana modal jualan dan mana asetmu. Tunggu aku rilis habis Lebaran ya, kuota *300 token* kamu sudah aku amanin kok!'
+        'Halo ${namaDisplay}! Wah, lagi ada proyek *Belanja Alat* atau renovasi buat *${bisnisDisplay}* nih? Sabar ya, aku lagi sekolah dulu biar nanti otomatis bisa bedain mana modal jualan dan mana asetmu. Tunggu aku rilis habis Lebaran ya, kuota *300 token* kamu sudah aku amanin kok!'
 
         OUTPUT: Tulis hanya teks balasannya saja.`;
 
@@ -149,9 +154,9 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
   } catch (error) {
     logger.error('generateComingSoonMessage error:', error.message);
     // Fallback ke pesan statis jika AI gagal
-    const sapaan = nama || namaBisnis || 'Kak';
+    const sapaan = nama || namaBisnis;
     return (
-      `⏳ Halo *${sapaan}*!\n\n` +
+      `Halo *${sapaan}*!\n\n` +
       `Terima kasih sudah bergabung bersama *KalaStudioAI* 🙏\n\n` +
       `Sistem Nata untuk akun kamu sedang dalam persiapan dan akan segera aktif. ` +
       `Kami akan menghubungi kamu segera setelah siap.\n\n` +

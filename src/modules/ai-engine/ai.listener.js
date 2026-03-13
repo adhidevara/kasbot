@@ -89,23 +89,12 @@ bus.on('whatsapp.message_received', async (payload) => {
         return;
     }
 
-    // Fungsi pembantu untuk mengirim peringatan agar tidak duplikasi kode
-    const sendWarningIfCritical = () => {
-        if (accessCheck.warningToken) {
-            bus.emit('whatsapp.send_message', { 
-                to: sender, 
-                text: accessCheck.warningToken 
-            });
-        }
-    };
-
     // ─── STEP 3: CEK INTENT (Laporan & Query) ───
     // Untuk pesan teks, cek apakah user sedang memilih menu laporan atau menanyakan saldo, atau langsung minta laporan
     if (source_type === 'teks' || source_type === 'suara') {
         // A. Handle Menu Laporan (Pilihan angka 1-3)
         const reportHandled = await handleReportMenu(nomorWa, sender, text, userProfile, accessCheck);
         if (reportHandled) {
-            sendWarningIfCritical(); // Munculkan peringatan setelah pilih menu
             return;
         }
 
@@ -114,7 +103,6 @@ bus.on('whatsapp.message_received', async (payload) => {
         if (isQuery) {
             await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
             bus.emit('chat.query', { sender, nomorWa, tipe: queryTipe, periode: queryPeriode, userProfile, sisaToken: accessCheck.sisaToken });
-            sendWarningIfCritical(); // Munculkan peringatan setelah tanya saldo
             return;
         }
 
@@ -123,7 +111,6 @@ bus.on('whatsapp.message_received', async (payload) => {
         if (isReport) {
             if (periode) {
                 await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
-                sendWarningIfCritical(); // Munculkan peringatan setelah laporan langsung
             }
             bus.emit('report.requested', { sender, nomorWa, text, periode, userProfile, sisaToken: accessCheck.sisaToken });
             return;
@@ -167,7 +154,6 @@ bus.on('whatsapp.message_received', async (payload) => {
 
     // ─── STEP 5: DEDUCT TOKEN (Berhasil Ekstraksi) ───
     await deductToken(userProfile.id, nomorWa, accessCheck.tokenDibutuhkan);
-    sendWarningIfCritical(); // Munculkan peringatan setelah catat transaksi
 
     bus.emit('ai.processing_finished', {
         ...payload,
