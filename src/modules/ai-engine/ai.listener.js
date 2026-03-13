@@ -25,14 +25,15 @@ bus.on('whatsapp.message_received', async (payload) => {
     const userProfile = await isUserRegistered(nomorWa);
 
     if (!userProfile) {
-        if (await isInOnboarding(nomorWa)) {
-            const { reply, done } = await processOnboarding(nomorWa, text);
-            bus.emit('whatsapp.send_message', { to: sender, text: reply });
-            if (done) logger.info(`✅ Onboarding selesai untuk ${nomorWa}`);
-        } else {
-            const welcomeMsg = await startOnboarding(nomorWa);
-            bus.emit('whatsapp.send_message', { to: sender, text: welcomeMsg });
-        }
+        logger.verbose(`🚫 Nomor tidak terdaftar, diabaikan: ${nomorWa}`);
+        // if (await isInOnboarding(nomorWa)) {
+        //     const { reply, done } = await processOnboarding(nomorWa, text);
+        //     bus.emit('whatsapp.send_message', { to: sender, text: reply });
+        //     if (done) logger.info(`✅ Onboarding selesai untuk ${nomorWa}`);
+        // } else {
+        //     const welcomeMsg = await startOnboarding(nomorWa);
+        //     bus.emit('whatsapp.send_message', { to: sender, text: welcomeMsg });
+        // }
         return;
     }
 
