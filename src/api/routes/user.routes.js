@@ -50,7 +50,8 @@ export async function userRoutes(fastify) {
 
     // POST /api/users/register — daftarkan pengguna baru (admin)
     fastify.post('/register', { preHandler: [verifyToken, verifyAdmin] }, async (request, reply) => {
-        const { nomor_wa, nama, nama_bisnis, kategori_bisnis, bahan_baku = [], alamat, plan = 'trial', trial_ends_at } = request.body || {};
+        // ── Required ──────────────────────────────────────────────────────────
+        const { nomor_wa, nama_bisnis, kategori_bisnis } = request.body || {};
 
         if (!nomor_wa || !nama_bisnis || !kategori_bisnis) {
             return reply.code(400).send({ success: false, message: 'nomor_wa, nama_bisnis, dan kategori_bisnis wajib diisi' });
@@ -69,6 +70,23 @@ export async function userRoutes(fastify) {
             return reply.code(409).send({ success: false, message: 'Nomor WA sudah terdaftar' });
         }
 
+        // ── Optional ──────────────────────────────────────────────────────────
+        const {
+            nama          = null,
+            alamat        = null,
+            email         = null,
+            bahan_baku    = [],
+            plan          = 'trial',
+            trial_ends_at = null,
+            is_comingsoon = false,
+            welcomed      = false,
+        } = request.body || {};
+
+        const validPlans = ['trial', 'starter', 'business', 'professional'];
+        if (!validPlans.includes(plan)) {
+            return reply.code(400).send({ success: false, message: `plan harus salah satu dari: ${validPlans.join(', ')}` });
+        }
+
         const trialEnd = trial_ends_at
             ? new Date(trial_ends_at)
             : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -77,39 +95,33 @@ export async function userRoutes(fastify) {
         const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 15;
 
         const insertData = {
-            nomor_wa:   nomorFormatted,
-            nama:       nama || null,
-            alamat:     alamat || null,
+            nomor_wa:        nomorFormatted,
             nama_bisnis,
             kategori_bisnis,
+            nama,
+            alamat,
+            email,
             bahan_baku,
+            is_comingsoon,
+            welcomed,
             onboarding_selesai: true,
             plan,
-            trial_ends_at:  trialEnd.toISOString(),
-            token_reset_at: new Date().toISOString(),
-            updated_at:     new Date().toISOString(),
+            trial_ends_at:   trialEnd.toISOString(),
+            token_reset_at:  new Date().toISOString(),
+            updated_at:      new Date().toISOString(),
         };
         if (tokenAwal !== null) {
             insertData.token_balance = tokenAwal;
             insertData.token_total   = tokenAwal;
         }
 
-        const { data, error } = await db.from('pengguna').insert([insertData])
-        .select('*')
-        .single();
-
+        const { data, error } = await db.from('pengguna').insert([insertData]).select('*').single();
         if (error) return reply.code(500).send({ success: false, message: error.message });
 
         return reply.code(201).send({
             success: true,
             message: 'Pengguna berhasil didaftarkan',
-            user: {
-                nomor_wa:  nomorFormatted,
-                nama,
-                nama_bisnis,
-                plan,
-                trial_ends_at: trialEnd.toISOString(),
-            },
+            user: data,
         });
     });
 

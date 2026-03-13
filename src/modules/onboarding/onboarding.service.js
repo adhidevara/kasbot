@@ -3,6 +3,7 @@ import { db } from '../../config/db.js';
 import logger from '../../shared/logger.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { cacheGet, cacheSet, cacheDel } from '../../shared/redis.js';
+import bcrypt from 'bcrypt';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -160,8 +161,7 @@ export async function processOnboarding(nomorWa, text) {
         return {
             reply:
                 `✅ Kategori *${kategori}* dipilih.\n\n` +
-                `Apa 3 bahan baku atau produk utama bisnis Anda?\n` +
-                `_(pisah dengan koma, contoh: terigu, gula, telur)_`,
+                `Boleh kenalan dong, siapa nama kamu?`,
             done: false
         };
     }
@@ -188,8 +188,7 @@ export async function processOnboarding(nomorWa, text) {
         return {
             reply:
                 `✅ Kategori *${kategoriFinal}* dicatat.\n\n` +
-                `Apa 3 bahan baku atau produk utama bisnis Anda?\n` +
-                `_(pisah dengan koma, contoh: terigu, gula, telur)_`,
+                `Boleh kenalan dong, siapa nama kamu?`,
             done: false
         };
     }
@@ -201,46 +200,117 @@ export async function processOnboarding(nomorWa, text) {
         return {
             reply:
                 `✅ Kategori *${kategoriFinal}* dicatat.\n\n` +
-                `Apa 3 bahan baku atau produk utama bisnis Anda?\n` +
-                `_(pisah dengan koma, contoh: terigu, gula, telur)_`,
+                `Boleh kenalan dong, siapa nama kamu?`,
             done: false
         };
     }
 
-    // ── Step 3: Bahan baku → Simpan ke Supabase ──────────────────────────────
+    // ── Step 3: Nama pribadi ──────────────────────────────────────────────────
     if (state.step === 3) {
-        const bahanArray = text.trim().split(',').map(b => b.trim()).filter(Boolean).slice(0, 3);
+        const nama = text.trim();
+        await setState(nomorWa, { ...state, step: 4, nama });
+        return {
+            reply:
+                `Senang kenal kamu, *${nama}*! 😊\n\n` +
+                `Sekarang, boleh minta *alamat email* kamu?\n` +
+                `_(Email ini akan dipakai untuk login ke dashboard KalaStudio)_`,
+            done: false
+        };
+    }
+
+    // ── Step 4: Email ─────────────────────────────────────────────────────────
+    if (state.step === 4) {
+        const email = text.trim().toLowerCase();
+        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+        if (!emailValid) {
+            return {
+                reply:
+                    `⚠️ Format email tidak valid. Coba lagi ya!\n` +
+                    `_Contoh: namakamu@gmail.com_`,
+                done: false
+            };
+        }
+
+        // Cek apakah email sudah dipakai
+        const { data: existing } = await db
+            .from('pengguna')
+            .select('nomor_wa')
+            .eq('email', email)
+            .single();
+
+        if (existing) {
+            return {
+                reply:
+                    `⚠️ Email *${email}* sudah terdaftar.\n` +
+                    `Silakan gunakan email lain:`,
+                done: false
+            };
+        }
+
+        await setState(nomorWa, { ...state, step: 5, email });
+        return {
+            reply:
+                `✅ Email *${email}* dicatat!\n\n` +
+                `Terakhir, buat *password* untuk login ke dashboard:\n` +
+                `_(Minimal 8 karakter)_`,
+            done: false
+        };
+    }
+
+    // ── Step 5: Password → Hash → Simpan ke Supabase ─────────────────────────
+    if (state.step === 5) {
+        const password = text.trim();
+
+        if (password.length < 8) {
+            return {
+                reply: `⚠️ Password terlalu pendek. Minimal *8 karakter* ya!`,
+                done: false
+            };
+        }
+
+        let passwordHash;
+        try {
+            passwordHash = await bcrypt.hash(password, 10);
+        } catch (err) {
+            logger.error('Gagal hash password:', err.message);
+            return { reply: '❌ Terjadi kesalahan. Coba kirim password kamu lagi.', done: false };
+        }
 
         const { error } = await db.from('pengguna').upsert({
-            nomor_wa: nomorWa,
-            nama_bisnis: state.nama_bisnis,
-            kategori_bisnis: state.kategori_bisnis,
-            bahan_baku: bahanArray,
+            nomor_wa:           nomorWa,
+            nama:               state.nama,
+            nama_bisnis:        state.nama_bisnis,
+            kategori_bisnis:    state.kategori_bisnis,
+            email:              state.email,
+            password_hash:      passwordHash,
             onboarding_selesai: true,
-            welcomed: true,
-            plan: 'trial',
-            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            token_balance: 15,
-            token_total: 15,
-            token_reset_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            welcomed:           true,
+            plan:               'trial',
+            trial_ends_at:      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            token_balance:      15,
+            token_total:        15,
+            token_reset_at:     new Date().toISOString(),
+            updated_at:         new Date().toISOString()
         }, { onConflict: 'nomor_wa' });
 
         if (error) {
             logger.error('Gagal simpan onboarding:', error.message);
-            return { reply: '❌ Terjadi kesalahan. Coba kirim ulang bahan baku Anda.', done: false };
+            return { reply: '❌ Terjadi kesalahan. Coba kirim password kamu lagi.', done: false };
         }
 
         await deleteState(nomorWa);
-        await invalidateUserCache(nomorWa); // Cache lama tidak valid lagi
+        await invalidateUserCache(nomorWa);
 
         return {
             reply:
-                `Oke, semua sudah aku catat! 🎉\n\n` +
+                `Semuanya sudah beres, *${state.nama}*! 🎉\n\n` +
                 `🏪 *${state.nama_bisnis}*\n` +
                 `📂 ${state.kategori_bisnis}\n` +
-                `📦 ${bahanArray.join(', ')}\n\n` +
+                `📧 ${state.email}\n\n` +
                 `Kamu punya *15 Token* dan *7 hari trial gratis* buat nyobain Nata.\n\n` +
+                `🔐 Login ke dashboard kamu di:\n` +
+                `https://www.kalastudioai.com/login\n\n` +
                 `Yuk, coba kirim transaksi pertama kamu sekarang!\n` +
                 `_Contoh: "jual ayam 10 ekor @50000" atau "beli pakan 50 kg @15000"_`,
             done: true
