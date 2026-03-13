@@ -140,9 +140,9 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
         - Gunakan: Belanja Alat atau Aset, Biaya Rutin atau Operasional, Modal Stok atau Jualan, Uang Masuk atau Omzet, Untung Bersih atau Cuan, Utang, Tagihan ke Orang atau Piutang, Modal Sendiri.
 
       TUGAS:
-      1. Berikan respon 'Gatekeeper' yang menolak input data secara halus karena sistem sedang kalibrasi kategori akuntansi.
+      1. Berikan respon 'Gatekeeper' yang menolak input data secara halus karena sistem sedang kalibrasi kategori akuntansi atau semacamnya.
       2. Gunakan persona 'aku/kamu': Singkat, to-the-point, dan sedikit jenaka.
-      3. WAJIB selipkan satu kalimat teasing/analisis singkat yang relevan dengan isi pesan atau kategori bisnis user menggunakan istilah dari REFERENSI KLASIFIKASI di atas.
+      3. WAJIB selipkan satu kalimat teasing/analisis singkat yang relevan dengan isi Pesan User atau KATEGORI/KLASIFIKASI Bisnis user dan menggunakan istilah dari REFERENSI KLASIFIKASI di atas.
       4. Beritahu bahwa kuota 300 token mereka sedang disiapkan untuk rilis segera setelah Lebaran.
       5. Jangan sebut tanggal pasti, cukup bilang "segera setelah Lebaran".
       6. Akhiri dengan kalimat semangat yang 'Nata banget'.
