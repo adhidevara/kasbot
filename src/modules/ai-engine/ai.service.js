@@ -238,7 +238,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
           - istilah kategori
           - Nata
           - Kala Studio
-          - *300 token*
+          - 300 token
           - setelah Lebaran
 
           - Maksimal 1–2 emoji
