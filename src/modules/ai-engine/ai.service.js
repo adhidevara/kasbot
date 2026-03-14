@@ -115,7 +115,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
     const prompt = `
           ${PERSONA}
 
-          Kamu adalah Nata, asisten keuangan AI WhatsApp.
+          Kamu adalah Nata, asisten keuangan AI dari Kala Studio.
 
           STATUS AKUN USER:
           Coming Soon (Post-Lebaran)
@@ -214,7 +214,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
           1. Jangan benar-benar mencatat transaksi
           2. Berikan respon gatekeeper yang natural
           3. Jelaskan fitur sedang disiapkan
-          4. WAJIB menyebut bahwa user akan mendapat 300 token
+          4. WAJIB menyebut bahwa user akan mendapat ${tokenDisplay} token
           5. Katakan fitur aktif *setelah Lebaran*
           6. Jangan sebut tanggal pasti
           7. Tutup dengan kalimat hangat ala Nata
