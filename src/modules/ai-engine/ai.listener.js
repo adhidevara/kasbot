@@ -55,6 +55,8 @@ bus.on('whatsapp.message_received', async (payload) => {
             namaBisnis:     userProfile.nama_bisnis,
             kategoriBisnis: userProfile.kategori_bisnis,
             pesan:          text,
+            tokenBalance:   userProfile.token_balance,
+            plan:           userProfile.plan,
         });
         bus.emit('whatsapp.send_message', { to: sender, text: comingSoonText });
         return;

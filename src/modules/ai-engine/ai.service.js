@@ -98,7 +98,7 @@ export async function processInput(text, context) {
 }
 
 // ─── Generate pesan Coming Soon (dinamis via AI) ──────────────────────────────
-export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisnis, pesan }) {
+export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisnis, pesan, tokenBalance, plan }) {
   try {
     const model = genAI.getGenerativeModel({
       model: GEMINI_MODEL,
@@ -109,6 +109,8 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
     const bisnisDisplay   = namaBisnis     || 'bisnis kamu';
     const kategoriDisplay = kategoriBisnis || 'Umum';
     const pesanDisplay    = pesan          || '(tidak ada pesan)';
+    const tokenDisplay    = tokenBalance != null ? tokenBalance : 300;
+    const planDisplay     = plan           || 'trial';
 
     const prompt = `
           ${PERSONA}
@@ -122,6 +124,8 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
           - Nama: ${namaDisplay}
           - Nama Bisnis: ${bisnisDisplay}
           - Kategori: ${kategoriDisplay}
+          - Plan: ${planDisplay}
+          - Token yang sudah disiapkan: ${tokenDisplay} token
           - Pesan User: "${pesanDisplay}"
 
           REFERENSI KATEGORI:
@@ -219,14 +223,14 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
 
           TOKEN REMINDER (WAJIB)
 
-          Setiap respon HARUS menyebutkan bahwa user akan mendapat 300 token.
+          Setiap respon HARUS menyebutkan bahwa user sudah punya ${tokenDisplay} token yang siap dipakai.
 
           Gunakan variasi kalimat seperti:
 
-          - "Nanti pas rilis kamu langsung dapat 300 token buat mulai."
-          - "300 token lagi aku siapin buat kamu pakai."
-          - "Tenang, nanti kamu dapat jatah awal 300 token."
-          - "Begitu aktif setelah Lebaran, kamu sudah punya 300 token buat dipakai."
+          - "Nanti pas rilis kamu langsung pakai ${tokenDisplay} token yang sudah aku siapin."
+          - "${tokenDisplay} token sudah aku siapin buat kamu pakai."
+          - "Tenang, kamu sudah punya ${tokenDisplay} token yang siap jalan."
+          - "Begitu aktif setelah Lebaran, langsung ${tokenDisplay} token buat dipakai."
 
           ------------------------------------------------
 
@@ -237,7 +241,7 @@ export async function generateComingSoonMessage({ nama, namaBisnis, kategoriBisn
             - istilah kategori
             - Nata
             - Kala Studio
-            - 300 token
+            - jumlah token (${tokenDisplay} token)
             - setelah Lebaran
 
           - Maksimal 1–2 emoji
