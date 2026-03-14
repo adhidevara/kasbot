@@ -34,25 +34,22 @@ function validateNomorWa(nomor_wa) {
 export async function authRoutes(fastify) {
 
     // ─── POST /api/auth/register ──────────────────────────────────────────────
-    // Bypass onboarding — daftar langsung via API
+    // Registrasi mandiri — satu endpoint untuk semua jalur pendaftaran
     fastify.post('/register', async (request, reply) => {
+        // ── Required ─────────────────────────────────────────────────────────
         const {
-            nama,
+            nomor_wa,
             nama_bisnis,
+            kategori_bisnis,
             email,
             password,
-            nomor_wa,
-            kategori_bisnis,
-            bahan_baku,
-            alamat,
-            plan = 'trial',
+            nama,
         } = request.body || {};
 
-        // Validasi wajib
-        if (!nama || !nama_bisnis || !email || !password || !kategori_bisnis) {
+        if (!nomor_wa || !nama_bisnis || !kategori_bisnis || !email || !password || !nama) {
             return reply.code(400).send({
                 success: false,
-                message: 'nama, nama_bisnis, email, password, dan kategori_bisnis wajib diisi',
+                message: 'nomor_wa, nama_bisnis, kategori_bisnis, email, password, dan nama wajib diisi',
             });
         }
 
@@ -63,17 +60,27 @@ export async function authRoutes(fastify) {
             });
         }
 
-        // Cek email sudah terdaftar
-        const { data: existing } = await db
-            .from('pengguna')
-            .select('id')
-            .eq('email', email)
-            .single();
+        // ── Optional ─────────────────────────────────────────────────────────
+        const {
+            bahan_baku        = [],
+            threshold_alert   = {},
+            alamat            = null,
+            plan              = 'trial',
+            trial_ends_at     = null,
+            token_balance     = null,
+            token_total       = null,
+            welcomed          = true,
+            onboarding_selesai = true,
+            is_comingsoon     = false,
+            token_warning_sent = false,
+        } = request.body || {};
 
-        if (existing) {
-            return reply.code(409).send({
+        // Validasi plan
+        const validPlans = ['trial', 'starter', 'business', 'professional'];
+        if (!validPlans.includes(plan)) {
+            return reply.code(400).send({
                 success: false,
-                message: 'Email sudah terdaftar',
+                message: `plan harus salah satu dari: ${validPlans.join(', ')}`,
             });
         }
 
@@ -84,51 +91,72 @@ export async function authRoutes(fastify) {
         }
         const nomorFormatted = waValidation.formatted;
 
-        // Cek nomor WA kalau diisi
-        if (nomorFormatted) {
-            const existingWa = await isUserRegistered(nomorFormatted);
-            if (existingWa) {
-                return reply.code(409).send({
-                    success: false,
-                    message: 'Nomor WA sudah terdaftar',
-                });
-            }
+        // Cek duplikat nomor WA
+        const existingWa = await isUserRegistered(nomorFormatted);
+        if (existingWa) {
+            return reply.code(409).send({
+                success: false,
+                message: 'Nomor WA sudah terdaftar',
+            });
         }
 
-        // Sanitasi bahan baku
-        const finalBahanBaku = Array.isArray(bahan_baku) ? bahan_baku : [];
+        // Cek duplikat email
+        const { data: existingEmail } = await db
+            .from('pengguna')
+            .select('id')
+            .eq('email', email)
+            .single();
 
+        if (existingEmail) {
+            return reply.code(409).send({
+                success: false,
+                message: 'Email sudah terdaftar',
+            });
+        }
+
+        // Hash password
         const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
 
-        const tokenAwal = PLAN_TOKEN_MAP[plan] ?? 15; // null = professional unlimited
-        const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        // Token awal — pakai nilai dari body jika diisi, fallback ke plan default
+        const tokenDefault = PLAN_TOKEN_MAP[plan] ?? 15;
+        const finalTokenBalance = token_balance !== null ? token_balance : tokenDefault;
+        const finalTokenTotal   = token_total   !== null ? token_total   : tokenDefault;
+
+        // trial_ends_at — pakai dari body jika diisi, fallback +7 hari
+        const finalTrialEnd = trial_ends_at
+            ? new Date(trial_ends_at)
+            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
         const insertData = {
-            nama,
+            nomor_wa:           nomorFormatted,
             nama_bisnis,
+            kategori_bisnis,
             email,
             password_hash,
-            nomor_wa:           nomorFormatted,
-            kategori_bisnis,
-            bahan_baku:         finalBahanBaku,
-            alamat:             alamat || null,
-            onboarding_selesai: true,
+            nama,
+            bahan_baku:         Array.isArray(bahan_baku) ? bahan_baku : [],
+            threshold_alert:    typeof threshold_alert === 'object' ? threshold_alert : {},
+            alamat,
             plan,
-            trial_ends_at:      trialEnd.toISOString(),
+            trial_ends_at:      finalTrialEnd.toISOString(),
+            welcomed,
+            onboarding_selesai,
+            is_comingsoon,
+            token_warning_sent,
             token_reset_at:     new Date().toISOString(),
             updated_at:         new Date().toISOString(),
         };
 
-        // Professional: token unlimited, tidak perlu set balance
-        if (tokenAwal !== null) {
-            insertData.token_balance = tokenAwal;
-            insertData.token_total   = tokenAwal;
+        // Professional = unlimited, tidak simpan balance
+        if (plan !== 'professional') {
+            insertData.token_balance = finalTokenBalance;
+            insertData.token_total   = finalTokenTotal;
         }
 
         const { data: user, error } = await db
             .from('pengguna')
             .insert([insertData])
-            .select('id, nama, nama_bisnis, email, nomor_wa, kategori_bisnis, plan, token_balance, trial_ends_at')
+            .select('*')
             .single();
 
         if (error) {
@@ -136,28 +164,19 @@ export async function authRoutes(fastify) {
         }
 
         const token = generateToken({
-            id:        user.id,
-            email:     user.email,
-            nomor_wa:  user.nomor_wa,
-            plan:      user.plan,
+            id:       user.id,
+            email:    user.email,
+            nomor_wa: user.nomor_wa,
+            plan:     user.plan,
         });
+
+        const { password_hash: _, ...safeUser } = user;
 
         return reply.code(201).send({
             success: true,
             message: 'Registrasi berhasil',
             token,
-            user: {
-                id:              user.id,
-                nama:            user.nama,
-                nama_bisnis:     user.nama_bisnis,
-                email:           user.email,
-                nomor_wa:        user.nomor_wa,
-                kategori_bisnis: user.kategori_bisnis,
-                alamat:          user.alamat,
-                plan:            user.plan,
-                token_balance:   user.token_balance,
-                trial_ends_at:   user.trial_ends_at,
-            },
+            user: safeUser,
         });
     });
 
