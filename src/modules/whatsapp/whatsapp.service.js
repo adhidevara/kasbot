@@ -201,7 +201,7 @@ export async function startWA() {
 
                     logger.verbose(`🎙️ Voice note dari [${nomorWa}]`);
 
-                    bus.emit('whatsapp.send_message', { to: sender, text: '🎙️ Sedang mendengarkan voice note Anda...' });
+                    //bus.emit('whatsapp.send_message', { to: sender, text: '🎙️ Sedang mendengarkan voice note Anda...' });
 
                     try {
                         const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
