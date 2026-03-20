@@ -69,15 +69,14 @@ bus.on('whatsapp.image_received', async ({ sender, senderAlt, imageBuffer, capti
 bus.on('whatsapp.audio_received', async ({ sender, senderAlt, audioBuffer, source_type }) => {
     logger.verbose(`🎙️ Media Listener: Memproses voice note dari ${sender}...`);
 
-    // Cek registrasi sebelum STT — hemat Whisper API untuk user tidak terdaftar
-    const nomorCek = senderAlt || sender;
-    const userProfile = await isUserRegistered(nomorCek);
-    if (!userProfile) {
-        logger.verbose(`🚫 Voice note dari nomor tidak terdaftar (${nomorCek}), skip STT.`);
-        return;
-    }
-
     try {
+        // Cek registrasi sebelum STT — hemat Whisper API untuk user tidak terdaftar
+        const nomorCek = senderAlt || sender;
+        const userProfile = await isUserRegistered(nomorCek);
+        if (!userProfile) {
+            logger.verbose(`🚫 Voice note dari nomor tidak terdaftar (${nomorCek}), skip STT.`);
+            return;
+        }
         // Estimasi durasi sebelum transcribe — untuk cek token di ai.listener
         const durasiDetik = getDurasiDetik(audioBuffer);
         logger.verbose(`⏱️ Estimasi durasi voice note: ${durasiDetik} detik`);
@@ -86,10 +85,10 @@ bus.on('whatsapp.audio_received', async ({ sender, senderAlt, audioBuffer, sourc
 
         logger.verbose(`✅ STT selesai: "${transcript}", forward ke AI...`);
 
-        bus.emit('whatsapp.send_message', {
-            to:   sender,
-            text: `🎙️ *Saya mendengar:*\n_"${transcript}"_\n\nSedang memproses...`
-        });
+        //bus.emit('whatsapp.send_message', {
+        //    to:   sender,
+        //    text: `🎙️ *Saya mendengar:*\n_"${transcript}"_\n\nSedang memproses...`
+        //});
 
         bus.emit('whatsapp.message_received', {
             sender,
