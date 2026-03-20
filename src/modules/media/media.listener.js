@@ -3,6 +3,7 @@ import logger from '../../shared/logger.js';
 import bus from '../../shared/eventBus.js';
 import { extractTextFromImage } from './ocr.service.js';
 import { transcribeAudio } from './stt.service.js';
+import { isUserRegistered } from '../onboarding/onboarding.service.js';
 
 logger.info("👂 Media Listener: Aktif (OCR + STT)...");
 
@@ -25,6 +26,14 @@ function getDurasiDetik(audioBuffer) {
 // ─────────────────────────────────────────
 bus.on('whatsapp.image_received', async ({ sender, senderAlt, imageBuffer, caption, source_type }) => {
     logger.verbose(`🖼️ Media Listener: Memproses gambar dari ${sender}...`);
+
+    // Cek registrasi sebelum OCR — hemat Vision API untuk user tidak terdaftar
+    const nomorCekImg = senderAlt || sender;
+    const userProfileImg = await isUserRegistered(nomorCekImg);
+    if (!userProfileImg) {
+        logger.verbose(`🚫 Gambar dari nomor tidak terdaftar (${nomorCekImg}), skip OCR.`);
+        return;
+    }
 
     try {
         const ocrText = await extractTextFromImage(imageBuffer);
@@ -59,6 +68,14 @@ bus.on('whatsapp.image_received', async ({ sender, senderAlt, imageBuffer, capti
 // ─────────────────────────────────────────
 bus.on('whatsapp.audio_received', async ({ sender, senderAlt, audioBuffer, source_type }) => {
     logger.verbose(`🎙️ Media Listener: Memproses voice note dari ${sender}...`);
+
+    // Cek registrasi sebelum STT — hemat Whisper API untuk user tidak terdaftar
+    const nomorCek = senderAlt || sender;
+    const userProfile = await isUserRegistered(nomorCek);
+    if (!userProfile) {
+        logger.verbose(`🚫 Voice note dari nomor tidak terdaftar (${nomorCek}), skip STT.`);
+        return;
+    }
 
     try {
         // Estimasi durasi sebelum transcribe — untuk cek token di ai.listener
